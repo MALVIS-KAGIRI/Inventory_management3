@@ -1,0 +1,12 @@
+Flask
+Flask-SQLAlchemy
+Flask-Login
+Flask-WTF
+Flask-Bcrypt
+email_validator
+Werkzeug
+pyodbc
+sqlalchemy-pytds
+schedule
+weasyprint
+xlsxwriter
