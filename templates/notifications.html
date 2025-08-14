@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">Notifications</h2>
+                    <p class="text-muted">Stay updated with system alerts and important information</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-primary" onclick="markAllAsRead()">
+                        <i class="bi bi-check-all"></i> Mark All as Read
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Low Stock Alerts -->
+            {% if low_stock_items %}
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Low Stock Alerts
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for item in low_stock_items %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center notification-item">
+                            <div>
+                                <h6 class="mb-1">{{ item.name }}</h6>
+                                <p class="mb-1 text-muted">Current stock: {{ item.quantity_in_stock }} | Reorder level: {{ item.reorder_level }}</p>
+                                <small class="text-muted">SKU: {{ item.sku }}</small>
+                            </div>
+                            <div>
+                                <span class="badge bg-warning">Low Stock</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Recent Orders -->
+            {% if recent_orders %}
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-cart-check"></i> Recent Orders
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for order in recent_orders %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center notification-item">
+                            <div>
+                                <h6 class="mb-1">Order #{{ order.order_number }}</h6>
+                                <p class="mb-1 text-muted">Customer: {{ order.customer.full_name }}</p>
+                                <small class="text-muted">{{ order.created_at.strftime('%B %d, %Y at %I:%M %p') }}</small>
+                            </div>
+                            <div>
+                                <span class="badge bg-{{ 'success' if order.status == 'Delivered' else 'primary' if order.status == 'Processing' else 'warning' }}">
+                                    {{ order.status }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- System Notifications -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-bell"></i> System Notifications
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center notification-item unread">
+                            <div>
+                                <h6 class="mb-1">System Backup Completed</h6>
+                                <p class="mb-1 text-muted">Daily backup completed successfully</p>
+                                <small class="text-muted">2 hours ago</small>
+                            </div>
+                            <div>
+                                <span class="badge bg-success">Success</span>
+                            </div>
+                        </div>
+                        
+                        <div class="list-group-item d-flex justify-content-between align-items-center notification-item">
+                            <div>
+                                <h6 class="mb-1">New User Registration</h6>
+                                <p class="mb-1 text-muted">A new user has registered and is pending approval</p>
+                                <small class="text-muted">5 hours ago</small>
+                            </div>
+                            <div>
+                                <span class="badge bg-info">Info</span>
+                            </div>
+                        </div>
+                        
+                        <div class="list-group-item d-flex justify-content-between align-items-center notification-item">
+                            <div>
+                                <h6 class="mb-1">Report Generated</h6>
+                                <p class="mb-1 text-muted">Monthly inventory report has been generated</p>
+                                <small class="text-muted">1 day ago</small>
+                            </div>
+                            <div>
+                                <span class="badge bg-secondary">Report</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Notification Settings -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gear"></i> Notification Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                        <label class="form-check-label" for="emailNotifications">
+                            Email Notifications
+                        </label>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="lowStockAlerts" checked>
+                        <label class="form-check-label" for="lowStockAlerts">
+                            Low Stock Alerts
+                        </label>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="orderNotifications" checked>
+                        <label class="form-check-label" for="orderNotifications">
+                            Order Notifications
+                        </label>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="systemAlerts">
+                        <label class="form-check-label" for="systemAlerts">
+                            System Alerts
+                        </label>
+                    </div>
+                    <button class="btn btn-primary btn-sm w-100">Save Settings</button>
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Quick Stats
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span>Unread Notifications</span>
+                        <span class="badge bg-primary">{{ (low_stock_items|length if low_stock_items else 0) + 1 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span>Low Stock Items</span>
+                        <span class="badge bg-warning">{{ low_stock_items|length if low_stock_items else 0 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span>Recent Orders</span>
+                        <span class="badge bg-info">{{ recent_orders|length if recent_orders else 0 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>System Alerts</span>
+                        <span class="badge bg-success">3</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.notification-item {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+}
+
+.notification-item.unread {
+    border-left: 4px solid #4f46e5;
+    background-color: rgba(79, 70, 229, 0.05);
+}
+
+.notification-item.unread::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background-color: #4f46e5;
+    border-radius: 50%;
+}
+</style>
+
+<script>
+function markAllAsRead() {
+    const unreadItems = document.querySelectorAll('.notification-item.unread');
+    unreadItems.forEach(item => {
+        item.classList.remove('unread');
+        item.style.animation = 'fadeOut 0.3s ease';
+    });
+    
+    // Update badge count
+    setTimeout(() => {
+        const badge = document.querySelector('.notification-badge');
+        if (badge) {
+            badge.textContent = '0';
+            badge.style.display = 'none';
+        }
+    }, 300);
+    
+    // Show success message
+    if (window.IMS && window.IMS.showNotification) {
+        window.IMS.showNotification('All notifications marked as read', 'success');
+    }
+}
+
+// Mark individual notification as read when clicked
+document.querySelectorAll('.notification-item').forEach(item => {
+    item.addEventListener('click', function() {
+        if (this.classList.contains('unread')) {
+            this.classList.remove('unread');
+            this.style.animation = 'fadeOut 0.3s ease';
+        }
+    });
+});
+
+// Auto-refresh notifications every 30 seconds
+setInterval(() => {
+    // In a real application, you would fetch new notifications via AJAX
+    console.log('Checking for new notifications...');
+}, 30000);
+</script>
+{% endblock %}

@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-1">System Settings</h2>
+            <p class="text-muted">Configure system preferences and application settings</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="nav flex-column nav-pills" id="settings-tab" role="tablist">
+                        <button class="nav-link active" id="general-tab" data-bs-toggle="pill" data-bs-target="#general" type="button" role="tab">
+                            <i class="bi bi-gear me-2"></i>General
+                        </button>
+                        <button class="nav-link" id="notifications-tab" data-bs-toggle="pill" data-bs-target="#notifications" type="button" role="tab">
+                            <i class="bi bi-bell me-2"></i>Notifications
+                        </button>
+                        <button class="nav-link" id="security-tab" data-bs-toggle="pill" data-bs-target="#security" type="button" role="tab">
+                            <i class="bi bi-shield-lock me-2"></i>Security
+                        </button>
+                        <button class="nav-link" id="backup-tab" data-bs-toggle="pill" data-bs-target="#backup" type="button" role="tab">
+                            <i class="bi bi-cloud-arrow-up me-2"></i>Backup
+                        </button>
+                        <button class="nav-link" id="integrations-tab" data-bs-toggle="pill" data-bs-target="#integrations" type="button" role="tab">
+                            <i class="bi bi-plug me-2"></i>Integrations
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-9">
+            <div class="tab-content" id="settings-tabContent">
+                <!-- General Settings -->
+                <div class="tab-pane fade show active" id="general" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">General Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Company Name</label>
+                                            <input type="text" class="form-control" value="Inventory Management System">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Time Zone</label>
+                                            <select class="form-select">
+                                                <option>UTC-05:00 (Eastern Time)</option>
+                                                <option>UTC-06:00 (Central Time)</option>
+                                                <option>UTC-07:00 (Mountain Time)</option>
+                                                <option>UTC-08:00 (Pacific Time)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Currency</label>
+                                            <select class="form-select">
+                                                <option>USD ($)</option>
+                                                <option>EUR (€)</option>
+                                                <option>GBP (£)</option>
+                                                <option>CAD (C$)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Date Format</label>
+                                            <select class="form-select">
+                                                <option>MM/DD/YYYY</option>
+                                                <option>DD/MM/YYYY</option>
+                                                <option>YYYY-MM-DD</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="maintenanceMode">
+                                        <label class="form-check-label" for="maintenanceMode">
+                                            Maintenance Mode
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Enable maintenance mode to restrict system access</div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notification Settings -->
+                <div class="tab-pane fade" id="notifications" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Notification Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form>
+                                <h6>Email Notifications</h6>
+                                <div class="mb-3">
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="lowStockEmail" checked>
+                                        <label class="form-check-label" for="lowStockEmail">
+                                            Low Stock Alerts
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="orderEmail" checked>
+                                        <label class="form-check-label" for="orderEmail">
+                                            New Order Notifications
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="reportEmail">
+                                        <label class="form-check-label" for="reportEmail">
+                                            Scheduled Report Delivery
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <h6>System Alerts</h6>
+                                <div class="mb-3">
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="systemErrors" checked>
+                                        <label class="form-check-label" for="systemErrors">
+                                            System Errors
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="backupAlerts" checked>
+                                        <label class="form-check-label" for="backupAlerts">
+                                            Backup Status
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Email Recipients</label>
+                                    <input type="email" class="form-control" placeholder="admin@company.com, manager@company.com">
+                                    <div class="form-text">Separate multiple emails with commas</div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">Save Settings</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Security Settings -->
+                <div class="tab-pane fade" id="security" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Security Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Session Timeout (minutes)</label>
+                                            <input type="number" class="form-control" value="30" min="5" max="480">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Password Expiry (days)</label>
+                                            <input type="number" class="form-control" value="90" min="30" max="365">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="twoFactor">
+                                        <label class="form-check-label" for="twoFactor">
+                                            Two-Factor Authentication
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="loginLogging" checked>
+                                        <label class="form-check-label" for="loginLogging">
+                                            Log Login Attempts
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="ipRestriction">
+                                        <label class="form-check-label" for="ipRestriction">
+                                            IP Address Restrictions
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Allowed IP Addresses</label>
+                                    <textarea class="form-control" rows="3" placeholder="192.168.1.0/24&#10;10.0.0.0/8"></textarea>
+                                    <div class="form-text">One IP address or CIDR block per line</div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">Save Settings</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Backup Settings -->
+                <div class="tab-pane fade" id="backup" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Backup Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Backup Frequency</label>
+                                            <select class="form-select">
+                                                <option>Daily</option>
+                                                <option>Weekly</option>
+                                                <option>Monthly</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Backup Time</label>
+                                            <input type="time" class="form-control" value="02:00">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Retention Period (days)</label>
+                                    <input type="number" class="form-control" value="30" min="7" max="365">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="autoBackup" checked>
+                                        <label class="form-check-label" for="autoBackup">
+                                            Enable Automatic Backups
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                                    <button type="button" class="btn btn-outline-secondary">Create Backup Now</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Recent Backups</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Size</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>{{ moment().format('MMM DD, YYYY HH:mm') }}</td>
+                                            <td>45.2 MB</td>
+                                            <td><span class="badge bg-success">Success</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary">Download</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>{{ moment().subtract(1, 'day').format('MMM DD, YYYY HH:mm') }}</td>
+                                            <td>44.8 MB</td>
+                                            <td><span class="badge bg-success">Success</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary">Download</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Integrations -->
+                <div class="tab-pane fade" id="integrations" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Third-Party Integrations</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-body text-center">
+                                            <i class="bi bi-envelope display-4 text-primary mb-3"></i>
+                                            <h6>Email Service</h6>
+                                            <p class="text-muted">Configure SMTP settings for email notifications</p>
+                                            <button class="btn btn-outline-primary btn-sm">Configure</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-body text-center">
+                                            <i class="bi bi-credit-card display-4 text-success mb-3"></i>
+                                            <h6>Payment Gateway</h6>
+                                            <p class="text-muted">Connect payment processing services</p>
+                                            <button class="btn btn-outline-success btn-sm">Configure</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-body text-center">
+                                            <i class="bi bi-truck display-4 text-warning mb-3"></i>
+                                            <h6>Shipping API</h6>
+                                            <p class="text-muted">Integrate with shipping providers</p>
+                                            <button class="btn btn-outline-warning btn-sm">Configure</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-body text-center">
+                                            <i class="bi bi-graph-up display-4 text-info mb-3"></i>
+                                            <h6>Analytics</h6>
+                                            <p class="text-muted">Connect business intelligence tools</p>
+                                            <button class="btn btn-outline-info btn-sm">Configure</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.nav-pills .nav-link {
+    color: #64748b;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.nav-pills .nav-link:hover {
+    background-color: #f1f5f9;
+    color: var(--primary-color);
+}
+
+.nav-pills .nav-link.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.card {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Save settings functionality
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Simulate saving
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.innerHTML = '<span class="loading"></span> Saving...';
+            submitBtn.disabled = true;
+            
+            setTimeout(() => {
+                submitBtn.innerHTML = '<i class="bi bi-check"></i> Saved!';
+                submitBtn.classList.remove('btn-primary');
+                submitBtn.classList.add('btn-success');
+                
+                setTimeout(() => {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.classList.remove('btn-success');
+                    submitBtn.classList.add('btn-primary');
+                    submitBtn.disabled = false;
+                }, 2000);
+            }, 1000);
+        });
+    });
+    
+    // Integration configuration
+    const configButtons = document.querySelectorAll('.btn-outline-primary, .btn-outline-success, .btn-outline-warning, .btn-outline-info');
+    configButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const service = this.closest('.card-body').querySelector('h6').textContent;
+            alert(`Configuration for ${service} would open here`);
+        });
+    });
+});
+</script>
+{% endblock %}

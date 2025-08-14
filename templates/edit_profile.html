@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-gear"></i> Edit Profile
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" data-autosave="true">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.username(class="form-control", placeholder="Username") }}
+                                    {{ form.username.label }}
+                                    {% if form.username.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.username.errors %}
+                                                <span>{{ error }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.email(class="form-control", placeholder="Email") }}
+                                    {{ form.email.label }}
+                                    {% if form.email.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.email.errors %}
+                                                <span>{{ error }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.password(class="form-control", placeholder="New Password (leave blank to keep current)") }}
+                                    {{ form.password.label }}
+                                    <div class="form-text">Leave blank to keep current password</div>
+                                    {% if form.password.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.password.errors %}
+                                                <span>{{ error }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.confirm_password(class="form-control", placeholder="Confirm New Password") }}
+                                    {{ form.confirm_password.label }}
+                                    {% if form.confirm_password.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.confirm_password.errors %}
+                                                <span>{{ error }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.role.label(class="form-label") }}
+                                    {{ form.role(class="form-select", disabled=true) }}
+                                    <div class="form-text">Contact an administrator to change your role</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Account Status</label>
+                                    <div class="form-control-plaintext">
+                                        <span class="badge bg-{{ 'success' if current_user.is_active else 'danger' }} fs-6">
+                                            {{ 'Active' if current_user.is_active else 'Inactive' }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Profile
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> Update Profile
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

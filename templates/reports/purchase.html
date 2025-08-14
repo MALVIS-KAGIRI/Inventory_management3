@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('reports') }}">Reports</a></li>
+                    <li class="breadcrumb-item active">Purchase Reports</li>
+                </ol>
+            </nav>
+            <h2 class="mb-1">Purchase & Supplier Reports</h2>
+            <p class="text-muted">Monitor supplier performance, cost analysis, and procurement insights</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-sliders"></i> Report Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="report-form">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.report_type.label(class="form-label") }}
+                            {{ form.report_type(class="form-select") }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="mb-3">
+                                    {{ form.start_date.label(class="form-label") }}
+                                    {{ form.start_date(class="form-control") }}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="mb-3">
+                                    {{ form.end_date.label(class="form-label") }}
+                                    {{ form.end_date(class="form-control") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.supplier_id.label(class="form-label") }}
+                            {{ form.supplier_id(class="form-select") }}
+                        </div>
+                        
+                        <div class="mb-4">
+                            {{ form.export_format.label(class="form-label") }}
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="export_format" id="pdf" value="pdf" checked>
+                                <label class="btn btn-outline-primary" for="pdf">
+                                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="export_format" id="excel" value="excel">
+                                <label class="btn btn-outline-success" for="excel">
+                                    <i class="bi bi-file-earmark-excel"></i> Excel
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="export_format" id="csv" value="csv">
+                                <label class="btn btn-outline-info" for="csv">
+                                    <i class="bi bi-file-earmark-text"></i> CSV
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="card report-type-card" data-report-type="supplier_performance">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon me-3" style="background: linear-gradient(135deg, #10b981, #059669);">
+                                    <i class="bi bi-truck"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Supplier Performance</h6>
+                                    <small class="text-muted">Delivery times and quality metrics</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card report-type-card" data-report-type="cost_analysis">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon me-3" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                                    <i class="bi bi-calculator"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Cost Analysis</h6>
+                                    <small class="text-muted">Purchase costs and margin analysis</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card report-type-card" data-report-type="reorder_suggestions">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon me-3" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Reorder Suggestions</h6>
+                                    <small class="text-muted">Automated reorder recommendations</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-eye"></i> Report Preview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="report-preview" id="reportPreview">
+                        <div class="text-center py-5">
+                            <i class="bi bi-truck display-1 text-muted"></i>
+                            <h5 class="mt-3 text-muted">Select report type and parameters</h5>
+                            <p class="text-muted">Configure your purchase report settings to analyze supplier performance</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.report-type-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.report-type-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    border-color: var(--primary-color);
+}
+
+.report-type-card.active {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.05), rgba(99, 102, 241, 0.05));
+}
+
+.report-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const reportTypeCards = document.querySelectorAll('.report-type-card');
+    const reportTypeSelect = document.querySelector('select[name="report_type"]');
+    
+    reportTypeCards.forEach(card => {
+        card.addEventListener('click', function() {
+            reportTypeCards.forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            
+            const reportType = this.dataset.reportType;
+            reportTypeSelect.value = reportType;
+            updateReportPreview(reportType);
+        });
+    });
+    
+    function updateReportPreview(reportType) {
+        const preview = document.getElementById('reportPreview');
+        const descriptions = {
+            'supplier_performance': 'Comprehensive analysis of supplier delivery performance, quality metrics, and reliability scores.',
+            'cost_analysis': 'Detailed breakdown of purchase costs, price trends, and margin analysis by supplier and product.',
+            'reorder_suggestions': 'Intelligent recommendations for inventory replenishment based on stock levels and demand patterns.'
+        };
+        
+        preview.innerHTML = `
+            <div class="text-center py-4">
+                <i class="bi bi-truck display-2 text-primary"></i>
+                <h5 class="mt-3">${reportType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} Report</h5>
+                <p class="text-muted">${descriptions[reportType]}</p>
+                <div class="mt-3">
+                    <span class="badge bg-primary me-2">Supplier Data</span>
+                    <span class="badge bg-success me-2">Cost Analysis</span>
+                    <span class="badge bg-info">Procurement</span>
+                </div>
+            </div>
+        `;
+    }
+});
+</script>
+{% endblock %}

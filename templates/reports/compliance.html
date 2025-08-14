@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('reports') }}">Reports</a></li>
+                    <li class="breadcrumb-item active">Compliance Reports</li>
+                </ol>
+            </nav>
+            <h2 class="mb-1">Compliance, Audit & Custom Reports</h2>
+            <p class="text-muted">Generate audit trails, compliance reports, and custom business insights</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-sliders"></i> Report Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="report-form">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.report_type.label(class="form-label") }}
+                            {{ form.report_type(class="form-select") }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="mb-3">
+                                    {{ form.start_date.label(class="form-label") }}
+                                    {{ form.start_date(class="form-control") }}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="mb-3">
+                                    {{ form.end_date.label(class="form-label") }}
+                                    {{ form.end_date(class="form-control") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.user_id.label(class="form-label") }}
+                            {{ form.user_id(class="form-select") }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.activity_type.label(class="form-label") }}
+                            {{ form.activity_type(class="form-select") }}
+                        </div>
+                        
+                        <div class="mb-4">
+                            {{ form.export_format.label(class="form-label") }}
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="export_format" id="pdf" value="pdf" checked>
+                                <label class="btn btn-outline-primary" for="pdf">
+                                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="export_format" id="excel" value="excel">
+                                <label class="btn btn-outline-success" for="excel">
+                                    <i class="bi bi-file-earmark-excel"></i> Excel
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="export_format" id="csv" value="csv">
+                                <label class="btn btn-outline-info" for="csv">
+                                    <i class="bi bi-file-earmark-text"></i> CSV
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="card report-type-card" data-report-type="stock_audit">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon me-3" style="background: linear-gradient(135deg, #10b981, #059669);">
+                                    <i class="bi bi-clipboard-check"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Stock Audit</h6>
+                                    <small class="text-muted">Inventory audit trails and discrepancies</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card report-type-card" data-report-type="user_activity">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon me-3" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                                    <i class="bi bi-person-lines-fill"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">User Activity Logs</h6>
+                                    <small class="text-muted">System access and user actions</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card report-type-card" data-report-type="price_changes">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon me-3" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                                    <i class="bi bi-graph-up-arrow"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Price Change History</h6>
+                                    <small class="text-muted">Product price modification tracking</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card report-type-card" data-report-type="tax_report">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon me-3" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                                    <i class="bi bi-receipt"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Tax Calculation</h6>
+                                    <small class="text-muted">Tax reports for compliance</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card report-type-card" data-report-type="custom_report">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon me-3" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                                    <i class="bi bi-gear"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Custom Report</h6>
+                                    <small class="text-muted">Business summary and KPIs</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-eye"></i> Report Preview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="report-preview" id="reportPreview">
+                        <div class="text-center py-5">
+                            <i class="bi bi-shield-check display-1 text-muted"></i>
+                            <h5 class="mt-3 text-muted">Select report type and parameters</h5>
+                            <p class="text-muted">Configure your compliance report settings for audit and regulatory purposes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.report-type-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.report-type-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    border-color: var(--primary-color);
+}
+
+.report-type-card.active {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.05), rgba(99, 102, 241, 0.05));
+}
+
+.report-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const reportTypeCards = document.querySelectorAll('.report-type-card');
+    const reportTypeSelect = document.querySelector('select[name="report_type"]');
+    
+    reportTypeCards.forEach(card => {
+        card.addEventListener('click', function() {
+            reportTypeCards.forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            
+            const reportType = this.dataset.reportType;
+            reportTypeSelect.value = reportType;
+            updateReportPreview(reportType);
+        });
+    });
+    
+    function updateReportPreview(reportType) {
+        const preview = document.getElementById('reportPreview');
+        const descriptions = {
+            'stock_audit': 'Comprehensive audit trail of all inventory movements with discrepancy analysis and compliance tracking.',
+            'user_activity': 'Detailed logs of user activities including login times, system access, and operational actions performed.',
+            'price_changes': 'Historical tracking of all product price modifications with timestamps and user attribution.',
+            'tax_report': 'Tax calculation reports for regulatory compliance including sales tax, VAT, and other applicable taxes.',
+            'custom_report': 'Customizable business summary report combining key metrics from sales, inventory, and customer data.'
+        };
+        
+        preview.innerHTML = `
+            <div class="text-center py-4">
+                <i class="bi bi-shield-check display-2 text-primary"></i>
+                <h5 class="mt-3">${reportType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} Report</h5>
+                <p class="text-muted">${descriptions[reportType]}</p>
+                <div class="mt-3">
+                    <span class="badge bg-primary me-2">Compliance</span>
+                    <span class="badge bg-success me-2">Audit Trail</span>
+                    <span class="badge bg-info">Regulatory</span>
+                </div>
+            </div>
+        `;
+    }
+});
+</script>
+{% endblock %}

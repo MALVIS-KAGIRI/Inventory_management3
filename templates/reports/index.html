@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">Reports Dashboard</h2>
+                    <p class="text-muted">Generate comprehensive reports for your business insights</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#scheduleReportModal">
+                        <i class="bi bi-clock"></i> Schedule Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Report Categories -->
+    <div class="row g-4">
+        <!-- Inventory Reports -->
+        <div class="col-lg-4 col-md-6">
+            <a href="{{ url_for('inventory_reports') }}" class="report-card">
+                <div class="report-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+                <h5 class="report-title">Inventory Reports</h5>
+                <p class="report-description">
+                    Track stock levels, movements, valuations, and aging analysis. 
+                    Monitor inventory performance and identify optimization opportunities.
+                </p>
+                <div class="mt-3">
+                    <span class="badge bg-light text-dark me-2">Status Reports</span>
+                    <span class="badge bg-light text-dark me-2">Low Stock</span>
+                    <span class="badge bg-light text-dark">Valuation</span>
+                </div>
+            </a>
+        </div>
+        
+        <!-- Sales Reports -->
+        <div class="col-lg-4 col-md-6">
+            <a href="{{ url_for('sales_reports') }}" class="report-card">
+                <div class="report-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <h5 class="report-title">Sales & Profitability</h5>
+                <p class="report-description">
+                    Analyze sales performance, customer behavior, and profitability metrics. 
+                    Track revenue trends and payment collections.
+                </p>
+                <div class="mt-3">
+                    <span class="badge bg-light text-dark me-2">Sales History</span>
+                    <span class="badge bg-light text-dark me-2">Profitability</span>
+                    <span class="badge bg-light text-dark">Customers</span>
+                </div>
+            </a>
+        </div>
+        
+        <!-- Purchase Reports -->
+        <div class="col-lg-4 col-md-6">
+            <a href="{{ url_for('purchase_reports') }}" class="report-card">
+                <div class="report-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <i class="bi bi-truck"></i>
+                </div>
+                <h5 class="report-title">Purchase & Suppliers</h5>
+                <p class="report-description">
+                    Monitor supplier performance, cost analysis, and reorder suggestions. 
+                    Optimize procurement processes and supplier relationships.
+                </p>
+                <div class="mt-3">
+                    <span class="badge bg-light text-dark me-2">Suppliers</span>
+                    <span class="badge bg-light text-dark me-2">Cost Analysis</span>
+                    <span class="badge bg-light text-dark">Reorders</span>
+                </div>
+            </a>
+        </div>
+        
+        <!-- Performance Reports -->
+        <div class="col-lg-4 col-md-6">
+            <a href="{{ url_for('performance_reports') }}" class="report-card">
+                <div class="report-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <h5 class="report-title">Performance & Forecasting</h5>
+                <p class="report-description">
+                    Analyze business trends, inventory turnover, and revenue forecasts. 
+                    Make data-driven decisions for future growth.
+                </p>
+                <div class="mt-3">
+                    <span class="badge bg-light text-dark me-2">Trends</span>
+                    <span class="badge bg-light text-dark me-2">Forecasting</span>
+                    <span class="badge bg-light text-dark">Growth</span>
+                </div>
+            </a>
+        </div>
+        
+        <!-- Compliance Reports -->
+        <div class="col-lg-4 col-md-6">
+            <a href="{{ url_for('compliance_reports') }}" class="report-card">
+                <div class="report-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <h5 class="report-title">Compliance & Audit</h5>
+                <p class="report-description">
+                    Generate audit trails, user activity logs, and compliance reports. 
+                    Ensure regulatory compliance and system accountability.
+                </p>
+                <div class="mt-3">
+                    <span class="badge bg-light text-dark me-2">Audit Trails</span>
+                    <span class="badge bg-light text-dark me-2">User Activity</span>
+                    <span class="badge bg-light text-dark">Tax Reports</span>
+                </div>
+            </a>
+        </div>
+        
+        <!-- Custom Reports -->
+        <div class="col-lg-4 col-md-6">
+            <div class="report-card" style="border: 2px dashed #cbd5e1;">
+                <div class="report-icon" style="background: linear-gradient(135deg, #64748b, #475569);">
+                    <i class="bi bi-plus-circle"></i>
+                </div>
+                <h5 class="report-title">Custom Reports</h5>
+                <p class="report-description">
+                    Create custom reports tailored to your specific business needs. 
+                    Combine multiple data sources for comprehensive insights.
+                </p>
+                <div class="mt-3">
+                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#customReportModal">
+                        <i class="bi bi-plus"></i> Create Custom Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Reports -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history"></i> Recent Reports
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Report Name</th>
+                                    <th>Type</th>
+                                    <th>Generated</th>
+                                    <th>Format</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                                            Inventory Status Report
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-success">Inventory</span></td>
+                                    <td>{{ moment().format('MMM DD, YYYY HH:mm') }}</td>
+                                    <td>PDF</td>
+                                    <td><span class="badge bg-success">Completed</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-download"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-file-earmark-excel text-success me-2"></i>
+                                            Sales Performance Report
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-primary">Sales</span></td>
+                                    <td>{{ moment().subtract(1, 'hour').format('MMM DD, YYYY HH:mm') }}</td>
+                                    <td>Excel</td>
+                                    <td><span class="badge bg-success">Completed</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-download"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-file-earmark-text text-info me-2"></i>
+                                            Supplier Analysis Report
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-warning">Purchase</span></td>
+                                    <td>{{ moment().subtract(2, 'hours').format('MMM DD, YYYY HH:mm') }}</td>
+                                    <td>CSV</td>
+                                    <td><span class="badge bg-warning">Processing</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-secondary" disabled>
+                                            <span class="loading"></span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Schedule Report Modal -->
+<div class="modal fade" id="scheduleReportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Schedule Automated Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="mb-3">
+                        <label class="form-label">Report Type</label>
+                        <select class="form-select">
+                            <option>Inventory Status Report</option>
+                            <option>Sales Summary Report</option>
+                            <option>Low Stock Alert</option>
+                            <option>Monthly Performance Report</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Frequency</label>
+                        <select class="form-select">
+                            <option>Daily</option>
+                            <option>Weekly</option>
+                            <option>Monthly</option>
+                            <option>Quarterly</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email Recipients</label>
+                        <input type="email" class="form-control" placeholder="Enter email addresses separated by commas">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Format</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="pdf" checked>
+                            <label class="form-check-label">PDF</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="excel">
+                            <label class="form-check-label">Excel</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="csv">
+                            <label class="form-check-label">CSV</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary">Schedule Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Report Modal -->
+<div class="modal fade" id="customReportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Custom Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Report Name</label>
+                                <input type="text" class="form-control" placeholder="Enter report name">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Data Source</label>
+                                <select class="form-select">
+                                    <option>Products</option>
+                                    <option>Sales</option>
+                                    <option>Customers</option>
+                                    <option>Suppliers</option>
+                                    <option>Orders</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Fields to Include</label>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="name">
+                                    <label class="form-check-label">Name</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="sku">
+                                    <label class="form-check-label">SKU</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="category">
+                                    <label class="form-check-label">Category</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="price">
+                                    <label class="form-check-label">Price</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="stock">
+                                    <label class="form-check-label">Stock Level</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="supplier">
+                                    <label class="form-check-label">Supplier</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="created">
+                                    <label class="form-check-label">Created Date</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="updated">
+                                    <label class="form-check-label">Updated Date</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="status">
+                                    <label class="form-check-label">Status</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Date Range</label>
+                                <select class="form-select">
+                                    <option>Last 30 days</option>
+                                    <option>Last 90 days</option>
+                                    <option>This year</option>
+                                    <option>Custom range</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Export Format</label>
+                                <select class="form-select">
+                                    <option>PDF</option>
+                                    <option>Excel</option>
+                                    <option>CSV</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary">Generate Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

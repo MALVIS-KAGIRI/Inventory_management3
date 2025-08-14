@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('reports') }}">Reports</a></li>
+                    <li class="breadcrumb-item active">Performance Reports</li>
+                </ol>
+            </nav>
+            <h2 class="mb-1">Performance & Forecasting Reports</h2>
+            <p class="text-muted">Analyze business trends, forecasts, and performance metrics</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-sliders"></i> Report Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="report-form">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.report_type.label(class="form-label") }}
+                            {{ form.report_type(class="form-select") }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="mb-3">
+                                    {{ form.start_date.label(class="form-label") }}
+                                    {{ form.start_date(class="form-control") }}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="mb-3">
+                                    {{ form.end_date.label(class="form-label") }}
+                                    {{ form.end_date(class="form-control") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.period_grouping.label(class="form-label") }}
+                            {{ form.period_grouping(class="form-select") }}
+                        </div>
+                        
+                        <div class="mb-4">
+                            {{ form.export_format.label(class="form-label") }}
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="export_format" id="pdf" value="pdf" checked>
+                                <label class="btn btn-outline-primary" for="pdf">
+                                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="export_format" id="excel" value="excel">
+                                <label class="btn btn-outline-success" for="excel">
+                                    <i class="bi bi-file-earmark-excel"></i> Excel
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="export_format" id="csv" value="csv">
+                                <label class="btn btn-outline-info" for="csv">
+                                    <i class="bi bi-file-earmark-text"></i> CSV
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="card report-type-card" data-report-type="sales_trend">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon me-3" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                                    <i class="bi bi-graph-up"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Sales Trend Analysis</h6>
+                                    <small class="text-muted">Revenue trends over time</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card report-type-card" data-report-type="inventory_turnover">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon me-3" style="background: linear-gradient(135deg, #10b981, #059669);">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Inventory Turnover</h6>
+                                    <small class="text-muted">Stock rotation efficiency</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card report-type-card" data-report-type="revenue_forecast">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon me-3" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                                    <i class="bi bi-crystal-ball"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Revenue Forecast</h6>
+                                    <small class="text-muted">Future revenue predictions</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card report-type-card" data-report-type="product_profitability">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon me-3" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                                    <i class="bi bi-currency-dollar"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Product Profitability</h6>
+                                    <small class="text-muted">Most and least profitable items</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card report-type-card" data-report-type="business_growth">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon me-3" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                                    <i class="bi bi-graph-up-arrow"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Business Growth</h6>
+                                    <small class="text-muted">Growth metrics and KPIs</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-eye"></i> Report Preview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="report-preview" id="reportPreview">
+                        <div class="text-center py-5">
+                            <i class="bi bi-graph-up-arrow display-1 text-muted"></i>
+                            <h5 class="mt-3 text-muted">Select report type and parameters</h5>
+                            <p class="text-muted">Configure your performance report settings to analyze business trends</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.report-type-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.report-type-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    border-color: var(--primary-color);
+}
+
+.report-type-card.active {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.05), rgba(99, 102, 241, 0.05));
+}
+
+.report-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const reportTypeCards = document.querySelectorAll('.report-type-card');
+    const reportTypeSelect = document.querySelector('select[name="report_type"]');
+    
+    reportTypeCards.forEach(card => {
+        card.addEventListener('click', function() {
+            reportTypeCards.forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            
+            const reportType = this.dataset.reportType;
+            reportTypeSelect.value = reportType;
+            updateReportPreview(reportType);
+        });
+    });
+    
+    function updateReportPreview(reportType) {
+        const preview = document.getElementById('reportPreview');
+        const descriptions = {
+            'sales_trend': 'Analyze sales patterns and trends over different time periods to identify growth opportunities.',
+            'inventory_turnover': 'Measure how efficiently inventory is being sold and replaced over time.',
+            'revenue_forecast': 'Predict future revenue based on historical data and current trends.',
+            'product_profitability': 'Identify the most and least profitable products in your inventory.',
+            'business_growth': 'Track key business growth metrics and performance indicators.'
+        };
+        
+        preview.innerHTML = `
+            <div class="text-center py-4">
+                <i class="bi bi-graph-up-arrow display-2 text-primary"></i>
+                <h5 class="mt-3">${reportType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} Report</h5>
+                <p class="text-muted">${descriptions[reportType]}</p>
+                <div class="mt-3">
+                    <span class="badge bg-primary me-2">Performance</span>
+                    <span class="badge bg-success me-2">Forecasting</span>
+                    <span class="badge bg-info">Analytics</span>
+                </div>
+            </div>
+        `;
+    }
+});
+</script>
+{% endblock %}

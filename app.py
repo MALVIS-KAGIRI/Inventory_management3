@@ -12,6 +12,12 @@ from forms import *
 from sqlalchemy import func
 import random
 import string
+from reports_inventory import InventoryReportGenerator
+from reports_purchase import PurchaseReportGenerator
+from reports_sales import SalesReportGenerator
+from reports_performance import PerformanceReportGenerator
+from reports_compliance import ComplianceReportGenerator
+from reports import ReportGenerator
 
 # Initialize Flask application
 app = Flask(__name__)
@@ -729,6 +735,399 @@ def add_sale():
     
     return render_template('add_sale.html', title='Add Sale', form=form, has_permission=has_permission)
 
+# Reports Routes
+@app.route('/reports')
+@login_required
+def reports():
+    if not has_permission('analytics.view'):
+        abort(403)
+    
+    return render_template('reports/index.html', title='Reports Dashboard', has_permission=has_permission)
+
+# Inventory Reports
+@app.route('/reports/inventory', methods=['GET', 'POST'])
+@login_required
+def inventory_reports():
+    if not has_permission('analytics.view'):
+        abort(403)
+    
+    from forms import InventoryReportForm
+    form = InventoryReportForm()
+    
+    # Populate choices
+    form.category_id.choices = [(0, 'All Categories')] + [(c.id, c.name) for c in Category.query.all()]
+    form.supplier_id.choices = [(0, 'All Suppliers')] + [(s.id, s.name) for s in Supplier.query.filter_by(is_active=True).all()]
+    
+    if form.validate_on_submit():
+        return generate_inventory_report(form)
+    
+    return render_template('reports/inventory.html', title='Inventory Reports', form=form, has_permission=has_permission)
+
+def generate_inventory_report(form):
+    """Generate and export inventory report"""
+    report_type = form.report_type.data
+    start_date = form.start_date.data
+    end_date = form.end_date.data
+    category_id = form.category_id.data
+    supplier_id = form.supplier_id.data
+    include_inactive = form.include_inactive.data
+    export_format = form.export_format.data
+    
+    # Generate report data based on type
+    if report_type == 'inventory_status':
+        data = InventoryReportGenerator.generate_inventory_status_report(
+            start_date, end_date, category_id, supplier_id, include_inactive
+        )
+        title = 'Inventory Status Report'
+        headers = ['name', 'sku', 'category_name', 'supplier_name', 'quantity_in_stock', 'reorder_level', 'price', 'stock_value', 'needs_reorder']
+    elif report_type == 'low_stock':
+        data = InventoryReportGenerator.generate_low_stock_report(
+            start_date, end_date, category_id, supplier_id
+        )
+        title = 'Low Stock Report'
+        headers = ['name', 'sku', 'category_name', 'supplier_name', 'quantity_in_stock', 'reorder_level', 'shortage', 'shortage_value']
+    elif report_type == 'stock_movement':
+        data = InventoryReportGenerator.generate_stock_movement_history(
+            start_date, end_date, category_id, supplier_id
+        )
+        title = 'Stock Movement History'
+        headers = ['product_name', 'product_sku', 'movement_type', 'quantity', 'reference', 'created_at', 'user_name']
+    elif report_type == 'inventory_valuation':
+        data = InventoryReportGenerator.generate_inventory_valuation_report(
+            start_date, end_date, category_id, supplier_id, include_inactive
+        )
+        title = 'Inventory Valuation Report'
+        headers = ['name', 'sku', 'category_name', 'quantity_in_stock', 'cost', 'price', 'cost_value', 'retail_value', 'profit_potential', 'margin_percentage']
+    else:  # inventory_aging
+        data = InventoryReportGenerator.generate_inventory_aging_analysis(
+            start_date, end_date, category_id, supplier_id
+        )
+        title = 'Inventory Aging Analysis'
+        headers = ['name', 'sku', 'category_name', 'quantity_in_stock', 'days_in_stock', 'aging_category', 'inventory_value']
+    
+    # Export based on format
+    filename = f"{report_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    
+    if export_format == 'csv':
+        return ReportGenerator.export_as_csv(data, filename, headers)
+    elif export_format == 'excel':
+        return ReportGenerator.export_as_excel(data, filename, headers)
+    else:  # pdf
+        return ReportGenerator.export_as_pdf(data, filename, headers, title)
+
+# Sales Reports
+@app.route('/reports/sales', methods=['GET', 'POST'])
+@login_required
+def sales_reports():
+    if not has_permission('analytics.view'):
+        abort(403)
+    
+    from forms import SalesReportForm
+    form = SalesReportForm()
+    
+    # Populate choices
+    form.customer_id.choices = [(0, 'All Customers')] + [(c.id, c.full_name) for c in Customer.query.filter_by(is_active=True).all()]
+    form.product_id.choices = [(0, 'All Products')] + [(p.id, p.name) for p in Product.query.filter_by(is_active=True).all()]
+    
+    if form.validate_on_submit():
+        return generate_sales_report(form)
+    
+    return render_template('reports/sales.html', title='Sales Reports', form=form, has_permission=has_permission)
+
+def generate_sales_report(form):
+    """Generate and export sales report"""
+    report_type = form.report_type.data
+    start_date = form.start_date.data
+    end_date = form.end_date.data
+    customer_id = form.customer_id.data
+    product_id = form.product_id.data
+    payment_status = form.payment_status.data
+    export_format = form.export_format.data
+    
+    # Generate report data based on type
+    if report_type == 'sales_history':
+        data = SalesReportGenerator.generate_sales_history_report(
+            start_date, end_date, customer_id, payment_status
+        )
+        title = 'Sales History Report'
+        headers = ['sale_number', 'customer_name', 'sale_date', 'total_amount', 'payment_status', 'payment_method', 'item_count']
+    elif report_type == 'product_performance':
+        data = SalesReportGenerator.generate_product_performance_report(
+            start_date, end_date, product_id
+        )
+        title = 'Product Sales Performance'
+        headers = ['name', 'sku', 'category_name', 'total_quantity_sold', 'total_revenue', 'profit', 'profit_margin']
+    elif report_type == 'customer_sales':
+        data = SalesReportGenerator.generate_customer_sales_report(
+            start_date, end_date, customer_id
+        )
+        title = 'Customer Sales Analysis'
+        headers = ['name', 'customer_type', 'total_orders', 'total_spent', 'avg_order_value', 'last_order_date']
+    elif report_type == 'profit_margin':
+        data = SalesReportGenerator.generate_profit_margin_report(
+            start_date, end_date, product_id
+        )
+        title = 'Profit Margin Analysis'
+        headers = ['name', 'sku', 'total_quantity_sold', 'total_revenue', 'total_cost', 'profit', 'profit_margin']
+    else:  # payment_collection
+        data = SalesReportGenerator.generate_payment_collection_report(
+            start_date, end_date, payment_status
+        )
+        title = 'Payment Collection Status'
+        headers = ['sale_number', 'customer_name', 'sale_date', 'total_amount', 'payment_status', 'days_outstanding']
+    
+    # Export based on format
+    filename = f"{report_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    
+    if export_format == 'csv':
+        return ReportGenerator.export_as_csv(data, filename, headers)
+    elif export_format == 'excel':
+        return ReportGenerator.export_as_excel(data, filename, headers)
+    else:  # pdf
+        return ReportGenerator.export_as_pdf(data, filename, headers, title)
+
+# Purchase Reports
+@app.route('/reports/purchase', methods=['GET', 'POST'])
+@login_required
+def purchase_reports():
+    if not has_permission('analytics.view'):
+        abort(403)
+    
+    from forms import PurchaseReportForm
+    form = PurchaseReportForm()
+    
+    # Populate choices
+    form.supplier_id.choices = [(0, 'All Suppliers')] + [(s.id, s.name) for s in Supplier.query.filter_by(is_active=True).all()]
+    
+    if form.validate_on_submit():
+        return generate_purchase_report(form)
+    
+    return render_template('reports/purchase.html', title='Purchase Reports', form=form, has_permission=has_permission)
+
+def generate_purchase_report(form):
+    """Generate and export purchase report"""
+    report_type = form.report_type.data
+    start_date = form.start_date.data
+    end_date = form.end_date.data
+    supplier_id = form.supplier_id.data
+    export_format = form.export_format.data
+    
+    # Generate report data based on type
+    if report_type == 'supplier_performance':
+        data = PurchaseReportGenerator.generate_supplier_performance_analysis(
+            start_date, end_date, supplier_id
+        )
+        title = 'Supplier Performance Analysis'
+        headers = ['name', 'contact_person', 'email', 'product_count', 'total_orders', 'on_time_delivery_rate']
+    elif report_type == 'cost_analysis':
+        data = PurchaseReportGenerator.generate_cost_analysis(
+            start_date, end_date, supplier_id
+        )
+        title = 'Purchase Cost Analysis'
+        headers = ['name', 'sku', 'supplier_name', 'cost', 'price', 'margin', 'margin_percentage']
+    else:  # reorder_suggestions
+        data = PurchaseReportGenerator.generate_reorder_suggestions_report(
+            start_date, end_date, supplier_id
+        )
+        title = 'Reorder Suggestions Report'
+        headers = ['name', 'sku', 'supplier_name', 'quantity_in_stock', 'reorder_level', 'reorder_amount', 'estimated_cost', 'priority']
+    
+    # Export based on format
+    filename = f"{report_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    
+    if export_format == 'csv':
+        return ReportGenerator.export_as_csv(data, filename, headers)
+    elif export_format == 'excel':
+        return ReportGenerator.export_as_excel(data, filename, headers)
+    else:  # pdf
+        return ReportGenerator.export_as_pdf(data, filename, headers, title)
+
+# Performance Reports
+@app.route('/reports/performance', methods=['GET', 'POST'])
+@login_required
+def performance_reports():
+    if not has_permission('analytics.view'):
+        abort(403)
+    
+    from forms import PerformanceReportForm
+    form = PerformanceReportForm()
+    
+    if form.validate_on_submit():
+        return generate_performance_report(form)
+    
+    return render_template('reports/performance.html', title='Performance Reports', form=form, has_permission=has_permission)
+
+def generate_performance_report(form):
+    """Generate and export performance report"""
+    report_type = form.report_type.data
+    start_date = form.start_date.data
+    end_date = form.end_date.data
+    period_grouping = form.period_grouping.data
+    export_format = form.export_format.data
+    
+    # Generate report data based on type
+    if report_type == 'sales_trend':
+        data = PerformanceReportGenerator.generate_sales_trend_report(
+            start_date, end_date, period_grouping
+        )
+        title = 'Sales Trend Analysis'
+        headers = ['period', 'order_count', 'total_revenue']
+    elif report_type == 'inventory_turnover':
+        data = PerformanceReportGenerator.generate_inventory_turnover_report(
+            start_date, end_date, period_grouping
+        )
+        title = 'Inventory Turnover Analysis'
+        headers = ['product_name', 'sku', 'category_name', 'current_stock', 'sales_quantity', 'turnover_ratio', 'days_to_sell', 'performance']
+    elif report_type == 'revenue_forecast':
+        data = PerformanceReportGenerator.generate_revenue_forecast_report(
+            start_date, end_date, period_grouping
+        )
+        title = 'Revenue Forecast Report'
+        headers = ['period', 'type', 'revenue', 'confidence']
+    elif report_type == 'product_profitability':
+        data = PerformanceReportGenerator.generate_product_profitability_report(
+            start_date, end_date
+        )
+        title = 'Product Profitability Analysis'
+        headers = ['name', 'sku', 'category_name', 'quantity_sold', 'total_revenue', 'total_profit', 'profit_margin', 'profitability_rank']
+    else:  # business_growth
+        data = PerformanceReportGenerator.generate_business_growth_report(
+            start_date, end_date
+        )
+        title = 'Business Growth Analysis'
+        headers = ['metric', 'current_period', 'previous_period', 'growth_rate', 'trend']
+    
+    # Export based on format
+    filename = f"{report_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    
+    if export_format == 'csv':
+        return ReportGenerator.export_as_csv(data, filename, headers)
+    elif export_format == 'excel':
+        return ReportGenerator.export_as_excel(data, filename, headers)
+    else:  # pdf
+        return ReportGenerator.export_as_pdf(data, filename, headers, title)
+
+# Compliance Reports
+@app.route('/reports/compliance', methods=['GET', 'POST'])
+@login_required
+def compliance_reports():
+    if not has_permission('analytics.view'):
+        abort(403)
+    
+    from forms import ComplianceReportForm
+    form = ComplianceReportForm()
+    
+    # Populate choices
+    form.user_id.choices = [(0, 'All Users')] + [(u.id, u.username) for u in User.query.filter_by(is_active=True).all()]
+    
+    if form.validate_on_submit():
+        return generate_compliance_report(form)
+    
+    return render_template('reports/compliance.html', title='Compliance Reports', form=form, has_permission=has_permission)
+
+def generate_compliance_report(form):
+    """Generate and export compliance report"""
+    report_type = form.report_type.data
+    start_date = form.start_date.data
+    end_date = form.end_date.data
+    user_id = form.user_id.data
+    activity_type = form.activity_type.data
+    export_format = form.export_format.data
+    
+    # Generate report data based on type
+    if report_type == 'stock_audit':
+        data = ComplianceReportGenerator.generate_stock_audit_report(
+            start_date, end_date
+        )
+        title = 'Stock Audit Report'
+        headers = ['name', 'sku', 'category_name', 'current_stock', 'total_in', 'total_out', 'net_movement', 'audit_status']
+    elif report_type == 'user_activity':
+        data = ComplianceReportGenerator.generate_user_activity_report(
+            start_date, end_date, user_id, activity_type
+        )
+        title = 'User Activity Logs'
+        headers = ['username', 'activity_type', 'activity_date', 'details', 'status']
+    elif report_type == 'price_changes':
+        data = ComplianceReportGenerator.generate_price_changes_report(
+            start_date, end_date
+        )
+        title = 'Price Change History'
+        headers = ['product_name', 'sku', 'category_name', 'change_date', 'old_price', 'new_price', 'price_change', 'change_percentage']
+    elif report_type == 'tax_report':
+        data = ComplianceReportGenerator.generate_tax_report(
+            start_date, end_date
+        )
+        title = 'Tax Calculation Report'
+        headers = ['sale_number', 'customer_name', 'sale_date', 'subtotal', 'tax_amount', 'total_amount', 'tax_rate']
+    else:  # custom_report
+        data = ComplianceReportGenerator.generate_custom_report(
+            start_date, end_date
+        )
+        title = 'Custom Report'
+        headers = ['report_section', 'metric', 'value', 'period']
+    
+    # Export based on format
+    filename = f"{report_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    
+    if export_format == 'csv':
+        return ReportGenerator.export_as_csv(data, filename, headers)
+    elif export_format == 'excel':
+        return ReportGenerator.export_as_excel(data, filename, headers)
+    else:  # pdf
+        return ReportGenerator.export_as_pdf(data, filename, headers, title)
+
+# Profile and Settings Routes
+@app.route('/profile')
+@login_required
+def profile():
+    return render_template('profile.html', title='User Profile', has_permission=has_permission)
+
+@app.route('/profile/edit', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    form = UserForm()
+    form.role.choices = [(role.id, role.name) for role in Role.query.all()]
+    
+    if form.validate_on_submit():
+        current_user.username = form.username.data
+        current_user.email = form.email.data
+        
+        if form.password.data:
+            current_user.password_hash = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+            
+        db.session.commit()
+        flash('Profile updated successfully!', 'success')
+        return redirect(url_for('profile'))
+    
+    elif request.method == 'GET':
+        form.username.data = current_user.username
+        form.email.data = current_user.email
+        form.role.data = current_user.role_id
+        form.is_active.data = current_user.is_active
+    
+    return render_template('edit_profile.html', title='Edit Profile', form=form, has_permission=has_permission)
+
+@app.route('/notifications')
+@login_required
+def notifications():
+    # Get recent activities for notifications
+    recent_orders = Order.query.order_by(Order.created_at.desc()).limit(10).all()
+    low_stock_items = Product.query.filter(Product.quantity_in_stock <= Product.reorder_level).limit(5).all()
+    
+    return render_template('notifications.html', 
+                         title='Notifications', 
+                         recent_orders=recent_orders,
+                         low_stock_items=low_stock_items,
+                         has_permission=has_permission)
+
+@app.route('/settings')
+@login_required
+def settings():
+    if not has_permission('settings.edit'):
+        abort(403)
+    
+    return render_template('settings.html', title='System Settings', has_permission=has_permission)
+
 # Initialize the database with default data
 def init_db():
     db.create_all()
@@ -783,7 +1182,9 @@ def init_db():
         ('projects.edit', 'Edit Projects'),
         ('projects.delete', 'Delete Projects'),
         ('sales.view', 'View Sales'),
-        ('sales.edit', 'Edit Sales')
+        ('sales.edit', 'Edit Sales'),
+        ('reports.view', 'View Reports'),
+        ('reports.export', 'Export Reports')
     ]
     
     for name, description in new_permissions:
@@ -837,6 +1238,8 @@ def init_db():
     projects_delete = Permission.query.filter_by(name='projects.delete').first()
     sales_view = Permission.query.filter_by(name='sales.view').first()
     sales_edit = Permission.query.filter_by(name='sales.edit').first()
+    reports_view = Permission.query.filter_by(name='reports.view').first()
+    reports_export = Permission.query.filter_by(name='reports.export').first()
     
     # Admin gets all permissions
     admin_role.permissions = all_permissions
@@ -853,7 +1256,9 @@ def init_db():
         projects_view,
         projects_edit,
         sales_view,
-        sales_edit
+        sales_edit,
+        reports_view,
+        reports_export
     ]
     
     # Operator gets basic operation permissions
@@ -863,7 +1268,8 @@ def init_db():
         inventory_view, 
         customers_view,
         projects_view,
-        sales_view
+        sales_view,
+        reports_view
     ]
     
     # Viewer gets view-only permissions
@@ -873,7 +1279,8 @@ def init_db():
         customers_view,
         analytics_view,
         projects_view,
-        sales_view
+        sales_view,
+        reports_view
     ]
     
     db.session.commit()
