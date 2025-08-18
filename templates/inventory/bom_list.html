@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">Bill of Materials (BOM)</h2>
+                    <p class="text-muted">Manage product assembly specifications and component requirements</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('create_bom') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Create BOM
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        {% for bom in boms %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 bom-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between mb-3">
+                        <div class="bom-icon">
+                            <i class="bi bi-diagram-3"></i>
+                        </div>
+                        <span class="badge bg-primary">v{{ bom.version }}</span>
+                    </div>
+                    
+                    <h5 class="card-title">{{ bom.name }}</h5>
+                    <p class="card-text text-muted">{{ bom.description[:100] }}...</p>
+                    
+                    <div class="bom-stats mb-3">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="stat-value">{{ bom.bom_items|length }}</div>
+                                <div class="stat-label">Components</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-value">${{ "%.2f"|format(bom.bom_items|sum(attribute='unit_cost')|default(0)) }}</div>
+                                <div class="stat-label">Total Cost</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('view_bom', id=bom.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-eye"></i> View Details
+                        </a>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-success btn-sm" title="Build Product">
+                                <i class="bi bi-play-circle"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm" title="Delete BOM">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        {% if not boms %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-diagram-3 display-1 text-muted"></i>
+                <h4 class="mt-3 text-muted">No Bill of Materials Created</h4>
+                <p class="text-muted">Create your first BOM to define product assembly requirements</p>
+                <a href="{{ url_for('create_bom') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Create First BOM
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.bom-card {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.bom-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.bom-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.bom-stats {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #495057;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+</style>
+{% endblock %}

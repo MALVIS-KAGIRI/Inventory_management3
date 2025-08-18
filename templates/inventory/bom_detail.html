@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('bom_list') }}">Bill of Materials</a></li>
+                    <li class="breadcrumb-item active">{{ bom.name }}</li>
+                </ol>
+            </nav>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">{{ bom.name }} <span class="badge bg-primary">v{{ bom.version }}</span></h2>
+                    <p class="text-muted">{{ bom.description }}</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-success" onclick="buildProduct()">
+                        <i class="bi bi-play-circle"></i> Build Product
+                    </button>
+                    <button class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Edit BOM
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- BOM Overview -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    <i class="bi bi-box"></i>
+                </div>
+                <div class="stats-value">{{ bom.bom_items|length }}</div>
+                <div class="stats-label">Components</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                    <i class="bi bi-currency-dollar"></i>
+                </div>
+                <div class="stats-value">${{ "%.2f"|format(bom.bom_items|sum(attribute='unit_cost')|default(0)) }}</div>
+                <div class="stats-label">Total Cost</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div class="stats-value">{{ bom.bom_items|selectattr('product.quantity_in_stock', '>=', 'quantity_required')|list|length }}</div>
+                <div class="stats-label">Available</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <div class="stats-value">{{ bom.bom_items|selectattr('product.quantity_in_stock', '<', 'quantity_required')|list|length }}</div>
+                <div class="stats-label">Short</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Components List -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-list-ul"></i> Components & Materials
+                        </h5>
+                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addComponentModal">
+                            <i class="bi bi-plus"></i> Add Component
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if bom.bom_items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Component</th>
+                                    <th>SKU</th>
+                                    <th>Required</th>
+                                    <th>Available</th>
+                                    <th>Unit Cost</th>
+                                    <th>Total Cost</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in bom.bom_items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-box text-primary me-2"></i>
+                                            <div>
+                                                <h6 class="mb-0">{{ item.product.name }}</h6>
+                                                <small class="text-muted">{{ item.product.description[:30] }}...</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><code>{{ item.product.sku }}</code></td>
+                                    <td>{{ item.quantity_required }}</td>
+                                    <td>{{ item.product.quantity_in_stock }}</td>
+                                    <td>${{ "%.2f"|format(item.unit_cost or 0) }}</td>
+                                    <td>${{ "%.2f"|format((item.unit_cost or 0) * item.quantity_required) }}</td>
+                                    <td>
+                                        {% if item.product.quantity_in_stock >= item.quantity_required %}
+                                            <span class="badge bg-success">Available</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Short by {{ item.quantity_required - item.product.quantity_in_stock }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="removeComponent({{ item.id }})">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-box display-1 text-muted"></i>
+                        <h5 class="mt-3 text-muted">No Components Added</h5>
+                        <p class="text-muted">Add components to define what's needed to build this product</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addComponentModal">
+                            <i class="bi bi-plus-circle"></i> Add First Component
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- BOM Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">BOM Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-sm-5"><strong>Version:</strong></div>
+                        <div class="col-sm-7">{{ bom.version }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-5"><strong>Final Product:</strong></div>
+                        <div class="col-sm-7">{{ bom.product.name if bom.product else 'Not specified' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-5"><strong>Created:</strong></div>
+                        <div class="col-sm-7">{{ bom.created_at.strftime('%B %d, %Y') }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-5"><strong>Last Updated:</strong></div>
+                        <div class="col-sm-7">{{ bom.updated_at.strftime('%B %d, %Y') }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Build Analysis -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Build Analysis</h5>
+                </div>
+                <div class="card-body">
+                    {% set can_build = bom.bom_items|selectattr('product.quantity_in_stock', '<', 'quantity_required')|list|length == 0 %}
+                    
+                    <div class="alert alert-{{ 'success' if can_build else 'warning' }}">
+                        <i class="bi bi-{{ 'check-circle' if can_build else 'exclamation-triangle' }}"></i>
+                        {% if can_build %}
+                            <strong>Ready to Build!</strong><br>
+                            All components are available in sufficient quantities.
+                        {% else %}
+                            <strong>Cannot Build</strong><br>
+                            Some components are not available in required quantities.
+                        {% endif %}
+                    </div>
+                    
+                    {% if not can_build %}
+                    <h6>Missing Components:</h6>
+                    <ul class="list-unstyled">
+                        {% for item in bom.bom_items %}
+                            {% if item.product.quantity_in_stock < item.quantity_required %}
+                            <li class="text-danger">
+                                <i class="bi bi-dash"></i> {{ item.product.name }}: 
+                                Need {{ item.quantity_required - item.product.quantity_in_stock }} more
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Component Modal -->
+<div class="modal fade" id="addComponentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Component to BOM</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('add_bom_item', bom_id=bom.id) }}">
+                <div class="modal-body">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.product_id.label(class="form-label") }}
+                        {{ form.product_id(class="form-select") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.quantity_required.label(class="form-label") }}
+                        {{ form.quantity_required(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.notes.label(class="form-label") }}
+                        {{ form.notes(class="form-control", rows="2") }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Component</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function buildProduct() {
+    if (confirm('Build this product? This will consume the required components from inventory.')) {
+        // Implementation for building product
+        alert('Product build functionality would be implemented here');
+    }
+}
+
+function removeComponent(itemId) {
+    if (confirm('Remove this component from the BOM?')) {
+        fetch(`/bom_item/${itemId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error removing component');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

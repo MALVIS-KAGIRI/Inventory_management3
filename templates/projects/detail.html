@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('projects') }}">Projects</a></li>
+                    <li class="breadcrumb-item active">{{ project.name }}</li>
+                </ol>
+            </nav>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">{{ project.name }}</h2>
+                    <p class="text-muted">{{ project.description }}</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('assign_to_project', project_id=project.id) }}" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> Assign Parts
+                    </a>
+                    <a href="{{ url_for('edit_project', id=project.id) }}" class="btn btn-primary">
+                        <i class="bi bi-pencil"></i> Edit Project
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Project Overview -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                    <i class="bi bi-info-circle"></i>
+                </div>
+                <div class="stats-value">{{ project.status }}</div>
+                <div class="stats-label">Project Status</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    <i class="bi bi-currency-dollar"></i>
+                </div>
+                <div class="stats-value">${{ "%.2f"|format(project.estimated_budget or 0) }}</div>
+                <div class="stats-label">Estimated Budget</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <i class="bi bi-box"></i>
+                </div>
+                <div class="stats-value">{{ project.assignments|length }}</div>
+                <div class="stats-label">Assigned Parts</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <div class="stats-value">${{ "%.2f"|format(project.actual_cost) }}</div>
+                <div class="stats-label">Actual Cost</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Project Details -->
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Assigned Parts -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam"></i> Assigned Parts & Materials
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if project.assignments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Part/Material</th>
+                                    <th>SKU</th>
+                                    <th>Assigned</th>
+                                    <th>Used</th>
+                                    <th>Status</th>
+                                    <th>Cost</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for assignment in project.assignments %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-box text-primary me-2"></i>
+                                            <div>
+                                                <h6 class="mb-0">{{ assignment.product.name }}</h6>
+                                                <small class="text-muted">{{ assignment.product.description[:30] }}...</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><code>{{ assignment.product.sku }}</code></td>
+                                    <td>{{ assignment.quantity_assigned }}</td>
+                                    <td>{{ assignment.quantity_used }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if assignment.status == 'Used' else 'warning' if assignment.status == 'Reserved' else 'secondary' }}">
+                                            {{ assignment.status }}
+                                        </span>
+                                    </td>
+                                    <td>${{ "%.2f"|format(assignment.total_cost or 0) }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            {% if assignment.status == 'Reserved' %}
+                                            <button type="button" class="btn btn-sm btn-outline-success" onclick="markAsUsed({{ assignment.id }})" title="Mark as Used">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                            <form method="POST" action="{{ url_for('unassign_from_project', project_id=project.id, assignment_id=assignment.id) }}" style="display: inline;">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Return to Inventory" onclick="return confirm('Return this item to inventory?')">
+                                                    <i class="bi bi-arrow-left-circle"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-box display-1 text-muted"></i>
+                        <h5 class="mt-3 text-muted">No Parts Assigned</h5>
+                        <p class="text-muted">Start by assigning parts and materials to this project</p>
+                        <a href="{{ url_for('assign_to_project', project_id=project.id) }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Assign Parts
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Work Orders -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-list-task"></i> Work Orders
+                        </h5>
+                        <a href="{{ url_for('create_work_order') }}?project_id={{ project.id }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-plus"></i> New Work Order
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if project.work_orders %}
+                    <div class="list-group list-group-flush">
+                        {% for work_order in project.work_orders %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ work_order.title }}</h6>
+                                <p class="mb-1 text-muted">{{ work_order.work_order_number }}</p>
+                                <small class="text-muted">{{ work_order.created_at.strftime('%B %d, %Y') }}</small>
+                            </div>
+                            <div>
+                                <span class="badge bg-{{ 'success' if work_order.status == 'Completed' else 'primary' if work_order.status == 'In Progress' else 'secondary' }}">
+                                    {{ work_order.status }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-list-task display-4 text-muted"></i>
+                        <p class="text-muted mt-2">No work orders created yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Project Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Project Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-sm-5"><strong>Code:</strong></div>
+                        <div class="col-sm-7">{{ project.project_code }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-5"><strong>Customer:</strong></div>
+                        <div class="col-sm-7">{{ project.customer.full_name if project.customer else 'N/A' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-5"><strong>Priority:</strong></div>
+                        <div class="col-sm-7">
+                            <span class="badge bg-{{ 'danger' if project.priority == 'Critical' else 'warning' if project.priority == 'High' else 'info' if project.priority == 'Medium' else 'secondary' }}">
+                                {{ project.priority }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-5"><strong>Start Date:</strong></div>
+                        <div class="col-sm-7">{{ project.start_date.strftime('%B %d, %Y') if project.start_date else 'Not set' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-5"><strong>End Date:</strong></div>
+                        <div class="col-sm-7">{{ project.end_date.strftime('%B %d, %Y') if project.end_date else 'Not set' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-5"><strong>Created:</strong></div>
+                        <div class="col-sm-7">{{ project.created_at.strftime('%B %d, %Y') }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Cost Breakdown -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Cost Analysis</h5>
+                </div>
+                <div class="card-body">
+                    {% set total_assigned_cost = project.assignments|sum(attribute='total_cost') or 0 %}
+                    <div class="row mb-2">
+                        <div class="col-sm-6"><strong>Materials Cost:</strong></div>
+                        <div class="col-sm-6">${{ "%.2f"|format(total_assigned_cost) }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-6"><strong>Labor Cost:</strong></div>
+                        <div class="col-sm-6">${{ "%.2f"|format(0) }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-6"><strong>Other Costs:</strong></div>
+                        <div class="col-sm-6">${{ "%.2f"|format(0) }}</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-6"><strong>Total Cost:</strong></div>
+                        <div class="col-sm-6"><strong>${{ "%.2f"|format(total_assigned_cost) }}</strong></div>
+                    </div>
+                    
+                    {% if project.estimated_budget %}
+                    <div class="mt-3">
+                        {% set budget_used = (total_assigned_cost / project.estimated_budget * 100) if project.estimated_budget > 0 else 0 %}
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Budget Used</span>
+                            <span>{{ "%.1f"|format(budget_used) }}%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-{{ 'danger' if budget_used > 100 else 'warning' if budget_used > 80 else 'success' }}" 
+                                 style="width: {{ min(budget_used, 100) }}%"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function markAsUsed(assignmentId) {
+    if (confirm('Mark this item as used? This action cannot be undone.')) {
+        fetch(`/assignment/${assignmentId}/mark_used`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error marking item as used');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

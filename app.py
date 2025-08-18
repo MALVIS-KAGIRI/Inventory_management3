@@ -9,7 +9,7 @@ from config import Config
 from database import db, init_app
 from models import *
 from forms import *
-from sqlalchemy import func
+from sqlalchemy import func, or_
 import random
 import string
 from reports_inventory import InventoryReportGenerator
@@ -734,6 +734,462 @@ def add_sale():
         return redirect(url_for('sales'))
     
     return render_template('add_sale.html', title='Add Sale', form=form, has_permission=has_permission)
+
+# Delete routes
+@app.route('/delete_product/<int:id>', methods=['POST'])
+@login_required
+@permission_required('products.delete')
+def delete_product(id):
+    product = Product.query.get_or_404(id)
+    
+    # Check if product is used in any active projects or orders
+    active_assignments = ProjectAssignment.query.filter_by(product_id=id, status='Reserved').count()
+    if active_assignments > 0:
+        flash(f'Cannot delete {product.name}. It is currently assigned to {active_assignments} active project(s).', 'error')
+        return redirect(url_for('inventory'))
+    
+    try:
+        # Create stock movement record for deletion
+        if product.quantity_in_stock > 0:
+            movement = StockMovement(
+                product_id=product.id,
+                movement_type='OUT',
+                quantity=product.quantity_in_stock,
+                reference_type='DELETION',
+                notes=f'Product deleted: {product.name}',
+                created_by=current_user.id
+            )
+            db.session.add(movement)
+        
+        db.session.delete(product)
+        db.session.commit()
+        flash(f'Product "{product.name}" has been deleted successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error deleting product. Please try again.', 'error')
+    
+    return redirect(url_for('inventory'))
+
+@app.route('/delete_category/<int:id>', methods=['POST'])
+@login_required
+@permission_required('categories.delete')
+def delete_category(id):
+    category = Category.query.get_or_404(id)
+    
+    # Check if category has products
+    product_count = Product.query.filter_by(category_id=id).count()
+    if product_count > 0:
+        flash(f'Cannot delete category "{category.name}". It contains {product_count} product(s).', 'error')
+        return redirect(url_for('categories'))
+    
+    try:
+        db.session.delete(category)
+        db.session.commit()
+        flash(f'Category "{category.name}" has been deleted successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error deleting category. Please try again.', 'error')
+    
+    return redirect(url_for('categories'))
+
+@app.route('/delete_supplier/<int:id>', methods=['POST'])
+@login_required
+@permission_required('suppliers.delete')
+def delete_supplier(id):
+    supplier = Supplier.query.get_or_404(id)
+    
+    # Check if supplier has products
+    product_count = Product.query.filter_by(supplier_id=id).count()
+    if product_count > 0:
+        flash(f'Cannot delete supplier "{supplier.name}". It supplies {product_count} product(s).', 'error')
+        return redirect(url_for('suppliers'))
+    
+    try:
+        db.session.delete(supplier)
+        db.session.commit()
+        flash(f'Supplier "{supplier.name}" has been deleted successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error deleting supplier. Please try again.', 'error')
+    
+    return redirect(url_for('suppliers'))
+
+@app.route('/delete_customer/<int:id>', methods=['POST'])
+@login_required
+@permission_required('customers.delete')
+def delete_customer(id):
+    customer = Customer.query.get_or_404(id)
+    
+    # Check if customer has orders or projects
+    order_count = Order.query.filter_by(customer_id=id).count()
+    project_count = Project.query.filter_by(customer_id=id).count()
+    
+    if order_count > 0 or project_count > 0:
+        flash(f'Cannot delete customer "{customer.full_name}". They have {order_count} order(s) and {project_count} project(s).', 'error')
+        return redirect(url_for('customers'))
+    
+    try:
+        db.session.delete(customer)
+        db.session.commit()
+        flash(f'Customer "{customer.full_name}" has been deleted successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error deleting customer. Please try again.', 'error')
+    
+    return redirect(url_for('customers'))
+
+@app.route('/delete_project/<int:id>', methods=['POST'])
+@login_required
+@permission_required('projects.delete')
+def delete_project(id):
+    project = Project.query.get_or_404(id)
+    
+    try:
+        # Return reserved inventory to available stock
+        assignments = ProjectAssignment.query.filter_by(project_id=id, status='Reserved').all()
+        for assignment in assignments:
+            product = Product.query.get(assignment.product_id)
+            if product:
+                product.quantity_in_stock += assignment.quantity_assigned
+                
+                # Create stock movement record
+                movement = StockMovement(
+                    product_id=product.id,
+                    movement_type='IN',
+                    quantity=assignment.quantity_assigned,
+                    reference_type='PROJECT_CANCELLATION',
+                    reference_id=project.id,
+                    notes=f'Returned from cancelled project: {project.name}',
+                    created_by=current_user.id
+                )
+                db.session.add(movement)
+        
+        db.session.delete(project)
+        db.session.commit()
+        flash(f'Project "{project.name}" has been deleted successfully. Reserved inventory has been returned.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error deleting project. Please try again.', 'error')
+    
+    return redirect(url_for('projects'))
+
+@app.route('/delete_sale/<int:id>', methods=['POST'])
+@login_required
+@permission_required('sales.delete')
+def delete_sale(id):
+    sale = Sale.query.get_or_404(id)
+    
+    # Only allow deletion of pending sales
+    if sale.payment_status not in ['Pending', 'Cancelled']:
+        flash('Only pending or cancelled sales can be deleted.', 'error')
+        return redirect(url_for('sales'))
+    
+    try:
+        # Return inventory if sale items were deducted
+        for item in sale.sale_items:
+            product = Product.query.get(item.product_id)
+            if product:
+                product.quantity_in_stock += item.quantity
+                
+                # Create stock movement record
+                movement = StockMovement(
+                    product_id=product.id,
+                    movement_type='IN',
+                    quantity=item.quantity,
+                    reference_type='SALE_CANCELLATION',
+                    reference_id=sale.id,
+                    notes=f'Returned from cancelled sale: {sale.sale_number}',
+                    created_by=current_user.id
+                )
+                db.session.add(movement)
+        
+        db.session.delete(sale)
+        db.session.commit()
+        flash(f'Sale "{sale.sale_number}" has been deleted successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error deleting sale. Please try again.', 'error')
+    
+    return redirect(url_for('sales'))
+
+# Project assignment routes
+@app.route('/project/<int:project_id>/assign', methods=['GET', 'POST'])
+@login_required
+@permission_required('projects.edit')
+def assign_to_project(project_id):
+    project = Project.query.get_or_404(project_id)
+    form = ProjectAssignmentForm()
+    
+    # Populate product choices with available stock
+    available_products = Product.query.filter(
+        Product.is_active == True,
+        Product.quantity_in_stock > 0
+    ).all()
+    form.product.choices = [(0, 'Select Product')] + [(p.id, f"{p.name} (Available: {p.quantity_in_stock})") for p in available_products]
+    
+    if form.validate_on_submit():
+        product = Product.query.get(form.product.data)
+        quantity = form.quantity_assigned.data
+        
+        if product.quantity_in_stock < quantity:
+            flash(f'Insufficient stock. Available: {product.quantity_in_stock}', 'error')
+            return render_template('projects/assign.html', form=form, project=project)
+        
+        # Create assignment
+        assignment = ProjectAssignment(
+            project_id=project.id,
+            product_id=product.id,
+            quantity_assigned=quantity,
+            unit_cost=product.cost,
+            total_cost=product.cost * quantity,
+            notes=form.notes.data,
+            assigned_by=current_user.id,
+            status='Reserved'
+        )
+        
+        if form.reserved_until.data:
+            try:
+                assignment.reserved_until = datetime.strptime(form.reserved_until.data, '%Y-%m-%d')
+            except ValueError:
+                pass
+        
+        # Update product stock
+        product.quantity_in_stock -= quantity
+        
+        # Create stock movement
+        movement = StockMovement(
+            product_id=product.id,
+            movement_type='OUT',
+            quantity=quantity,
+            reference_type='PROJECT',
+            reference_id=project.id,
+            notes=f'Assigned to project: {project.name}',
+            created_by=current_user.id
+        )
+        
+        db.session.add(assignment)
+        db.session.add(movement)
+        db.session.commit()
+        
+        flash(f'Successfully assigned {quantity} units of {product.name} to {project.name}', 'success')
+        return redirect(url_for('view_project', id=project.id))
+    
+    return render_template('projects/assign.html', form=form, project=project)
+
+@app.route('/project/<int:project_id>/unassign/<int:assignment_id>', methods=['POST'])
+@login_required
+@permission_required('projects.edit')
+def unassign_from_project(project_id, assignment_id):
+    assignment = ProjectAssignment.query.get_or_404(assignment_id)
+    
+    if assignment.status == 'Used':
+        flash('Cannot unassign items that have already been used.', 'error')
+        return redirect(url_for('view_project', id=project_id))
+    
+    try:
+        # Return inventory to stock
+        product = Product.query.get(assignment.product_id)
+        product.quantity_in_stock += assignment.quantity_assigned
+        
+        # Create stock movement
+        movement = StockMovement(
+            product_id=product.id,
+            movement_type='IN',
+            quantity=assignment.quantity_assigned,
+            reference_type='PROJECT_RETURN',
+            reference_id=project_id,
+            notes=f'Returned from project: {assignment.project.name}',
+            created_by=current_user.id
+        )
+        
+        db.session.add(movement)
+        db.session.delete(assignment)
+        db.session.commit()
+        
+        flash(f'Successfully returned {assignment.quantity_assigned} units of {product.name} to inventory.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error returning items to inventory.', 'error')
+    
+    return redirect(url_for('view_project', id=project_id))
+
+# Bill of Materials routes
+@app.route('/bom')
+@login_required
+@permission_required('inventory.view')
+def bom_list():
+    boms = BillOfMaterials.query.filter_by(is_active=True).all()
+    return render_template('inventory/bom_list.html', boms=boms)
+
+@app.route('/bom/new', methods=['GET', 'POST'])
+@login_required
+@permission_required('inventory.create')
+def create_bom():
+    form = BOMForm()
+    
+    # Populate product choices
+    products = Product.query.filter_by(is_active=True).all()
+    form.product_id.choices = [(0, 'Select Final Product (Optional)')] + [(p.id, p.name) for p in products]
+    
+    if form.validate_on_submit():
+        bom = BillOfMaterials(
+            name=form.name.data,
+            description=form.description.data,
+            version=form.version.data or '1.0',
+            product_id=form.product_id.data if form.product_id.data > 0 else None,
+            created_by=current_user.id
+        )
+        
+        db.session.add(bom)
+        db.session.commit()
+        
+        flash(f'BOM "{bom.name}" created successfully.', 'success')
+        return redirect(url_for('view_bom', id=bom.id))
+    
+    return render_template('inventory/bom_form.html', form=form, title='Create Bill of Materials')
+
+@app.route('/bom/<int:id>')
+@login_required
+@permission_required('inventory.view')
+def view_bom(id):
+    bom = BillOfMaterials.query.get_or_404(id)
+    form = BOMItemForm()
+    
+    # Populate product choices for adding items
+    products = Product.query.filter_by(is_active=True).all()
+    form.product_id.choices = [(0, 'Select Component')] + [(p.id, f"{p.name} (Stock: {p.quantity_in_stock})") for p in products]
+    
+    return render_template('inventory/bom_detail.html', bom=bom, form=form)
+
+@app.route('/bom/<int:bom_id>/add_item', methods=['POST'])
+@login_required
+@permission_required('inventory.edit')
+def add_bom_item(bom_id):
+    bom = BillOfMaterials.query.get_or_404(bom_id)
+    form = BOMItemForm()
+    
+    products = Product.query.filter_by(is_active=True).all()
+    form.product_id.choices = [(0, 'Select Component')] + [(p.id, p.name) for p in products]
+    
+    if form.validate_on_submit():
+        # Check if item already exists in BOM
+        existing_item = BOMItem.query.filter_by(bom_id=bom_id, product_id=form.product_id.data).first()
+        if existing_item:
+            flash('This component is already in the BOM.', 'error')
+            return redirect(url_for('view_bom', id=bom_id))
+        
+        product = Product.query.get(form.product_id.data)
+        bom_item = BOMItem(
+            bom_id=bom_id,
+            product_id=form.product_id.data,
+            quantity_required=form.quantity_required.data,
+            unit_cost=product.cost,
+            notes=form.notes.data
+        )
+        
+        db.session.add(bom_item)
+        db.session.commit()
+        
+        flash(f'Added {product.name} to BOM.', 'success')
+    
+    return redirect(url_for('view_bom', id=bom_id))
+
+# Kit Management routes
+@app.route('/kits')
+@login_required
+@permission_required('inventory.view')
+def kits():
+    kits = Kit.query.filter_by(is_active=True).all()
+    return render_template('inventory/kits.html', kits=kits)
+
+@app.route('/kit/new', methods=['GET', 'POST'])
+@login_required
+@permission_required('inventory.create')
+def create_kit():
+    form = KitForm()
+    
+    categories = Category.query.all()
+    form.category_id.choices = [(0, 'Select Category (Optional)')] + [(c.id, c.name) for c in categories]
+    
+    if form.validate_on_submit():
+        kit = Kit(
+            name=form.name.data,
+            description=form.description.data,
+            kit_code=form.kit_code.data,
+            category_id=form.category_id.data if form.category_id.data > 0 else None,
+            created_by=current_user.id
+        )
+        
+        db.session.add(kit)
+        db.session.commit()
+        
+        flash(f'Kit "{kit.name}" created successfully.', 'success')
+        return redirect(url_for('view_kit', id=kit.id))
+    
+    return render_template('inventory/kit_form.html', form=form, title='Create Kit')
+
+@app.route('/kit/<int:id>')
+@login_required
+@permission_required('inventory.view')
+def view_kit(id):
+    kit = Kit.query.get_or_404(id)
+    form = KitItemForm()
+    
+    products = Product.query.filter_by(is_active=True).all()
+    form.product_id.choices = [(0, 'Select Product')] + [(p.id, f"{p.name} (Stock: {p.quantity_in_stock})") for p in products]
+    
+    return render_template('inventory/kit_detail.html', kit=kit, form=form)
+
+# Work Order routes
+@app.route('/work_orders')
+@login_required
+@permission_required('operations.view')
+def work_orders():
+    orders = WorkOrder.query.order_by(WorkOrder.created_at.desc()).all()
+    return render_template('operations/work_orders.html', orders=orders)
+
+@app.route('/work_order/new', methods=['GET', 'POST'])
+@login_required
+@permission_required('operations.create')
+def create_work_order():
+    form = WorkOrderForm()
+    
+    projects = Project.query.filter_by(status='Active').all()
+    form.project_id.choices = [(0, 'No Project')] + [(p.id, p.name) for p in projects]
+    
+    users = User.query.filter_by(is_active=True).all()
+    form.assigned_to.choices = [(0, 'Unassigned')] + [(u.id, u.username) for u in users]
+    
+    if form.validate_on_submit():
+        # Generate work order number
+        last_order = WorkOrder.query.order_by(WorkOrder.id.desc()).first()
+        order_number = f"WO{(last_order.id + 1) if last_order else 1:06d}"
+        
+        work_order = WorkOrder(
+            work_order_number=order_number,
+            title=form.title.data,
+            description=form.description.data,
+            project_id=form.project_id.data if form.project_id.data > 0 else None,
+            priority=form.priority.data,
+            assigned_to=form.assigned_to.data if form.assigned_to.data > 0 else None,
+            estimated_hours=form.estimated_hours.data,
+            created_by=current_user.id
+        )
+        
+        db.session.add(work_order)
+        db.session.commit()
+        
+        flash(f'Work Order "{work_order.work_order_number}" created successfully.', 'success')
+        return redirect(url_for('view_work_order', id=work_order.id))
+    
+    return render_template('operations/work_order_form.html', form=form, title='Create Work Order')
+
+@app.route('/work_order/<int:id>')
+@login_required
+@permission_required('operations.view')
+def view_work_order(id):
+    work_order = WorkOrder.query.get_or_404(id)
+    return render_template('operations/work_order_detail.html', work_order=work_order)
 
 # Reports Routes
 @app.route('/reports')
