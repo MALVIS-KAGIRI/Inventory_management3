@@ -146,8 +146,76 @@ class ProjectAssignment(db.Model):
     assignment_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     notes = db.Column(db.Text)
     assigned_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    status = db.Column(db.String(20), default='Reserved')  # Reserved, Used, Returned
+    reserved_until = db.Column(db.DateTime)
     product = db.relationship('Product', backref='project_assignments')
 
+class BillOfMaterials(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    version = db.Column(db.String(20), default='1.0')
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'))  # Final product
+    is_active = db.Column(db.Boolean, default=True)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    bom_items = db.relationship('BOMItem', backref='bom', lazy=True, cascade='all, delete-orphan')
+
+class BOMItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    bom_id = db.Column(db.Integer, db.ForeignKey('bill_of_materials.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    quantity_required = db.Column(db.Integer, nullable=False)
+    unit_cost = db.Column(db.Numeric(10, 2))
+    notes = db.Column(db.Text)
+    product = db.relationship('Product', backref='bom_items')
+
+class Kit(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    kit_code = db.Column(db.String(50), unique=True, nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
+    total_cost = db.Column(db.Numeric(10, 2), default=0.00)
+    is_active = db.Column(db.Boolean, default=True)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    kit_items = db.relationship('KitItem', backref='kit', lazy=True, cascade='all, delete-orphan')
+
+class KitItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    kit_id = db.Column(db.Integer, db.ForeignKey('kit.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    product = db.relationship('Product', backref='kit_items')
+
+class WorkOrder(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    work_order_number = db.Column(db.String(20), unique=True, nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'))
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    status = db.Column(db.String(20), default='Open')  # Open, In Progress, Completed, Cancelled
+    priority = db.Column(db.String(10), default='Medium')
+    assigned_to = db.Column(db.Integer, db.ForeignKey('user.id'))
+    estimated_hours = db.Column(db.Numeric(8, 2))
+    actual_hours = db.Column(db.Numeric(8, 2), default=0.00)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    project = db.relationship('Project', backref='work_orders')
+    work_order_items = db.relationship('WorkOrderItem', backref='work_order', lazy=True, cascade='all, delete-orphan')
+
+class WorkOrderItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    work_order_id = db.Column(db.Integer, db.ForeignKey('work_order.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    quantity_required = db.Column(db.Integer, nullable=False)
+    quantity_used = db.Column(db.Integer, default=0)
+    unit_cost = db.Column(db.Numeric(10, 2))
+    total_cost = db.Column(db.Numeric(10, 2))
+    product = db.relationship('Product', backref='work_order_items')
 class Sale(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sale_number = db.Column(db.String(20), unique=True, nullable=False)

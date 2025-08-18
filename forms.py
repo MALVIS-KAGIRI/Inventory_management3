@@ -87,9 +87,43 @@ class ProjectForm(FlaskForm):
 class ProjectAssignmentForm(FlaskForm):
     product = SelectField('Product', coerce=int, validators=[DataRequired()])
     quantity_assigned = IntegerField('Quantity to Assign', validators=[DataRequired(), NumberRange(min=1)])
+    reserved_until = StringField('Reserved Until (Optional)')
     notes = TextAreaField('Notes')
     submit = SubmitField('Assign')
 
+class BOMForm(FlaskForm):
+    name = StringField('BOM Name', validators=[DataRequired(), Length(max=100)])
+    description = TextAreaField('Description')
+    version = StringField('Version', validators=[Length(max=20)], default='1.0')
+    product_id = SelectField('Final Product', coerce=int, validators=[Optional()])
+    submit = SubmitField('Save BOM')
+
+class BOMItemForm(FlaskForm):
+    product_id = SelectField('Component', coerce=int, validators=[DataRequired()])
+    quantity_required = IntegerField('Quantity Required', validators=[DataRequired(), NumberRange(min=1)])
+    notes = TextAreaField('Notes')
+    submit = SubmitField('Add Component')
+
+class KitForm(FlaskForm):
+    name = StringField('Kit Name', validators=[DataRequired(), Length(max=100)])
+    description = TextAreaField('Description')
+    kit_code = StringField('Kit Code', validators=[DataRequired(), Length(max=50)])
+    category_id = SelectField('Category', coerce=int, validators=[Optional()])
+    submit = SubmitField('Save Kit')
+
+class KitItemForm(FlaskForm):
+    product_id = SelectField('Product', coerce=int, validators=[DataRequired()])
+    quantity = IntegerField('Quantity', validators=[DataRequired(), NumberRange(min=1)])
+    submit = SubmitField('Add to Kit')
+
+class WorkOrderForm(FlaskForm):
+    title = StringField('Work Order Title', validators=[DataRequired(), Length(max=200)])
+    description = TextAreaField('Description')
+    project_id = SelectField('Project', coerce=int, validators=[Optional()])
+    priority = SelectField('Priority', choices=[('Low', 'Low'), ('Medium', 'Medium'), ('High', 'High'), ('Critical', 'Critical')])
+    assigned_to = SelectField('Assigned To', coerce=int, validators=[Optional()])
+    estimated_hours = DecimalField('Estimated Hours', validators=[Optional(), NumberRange(min=0)])
+    submit = SubmitField('Create Work Order')
 class SaleForm(FlaskForm):
     customer = SelectField('Customer', coerce=int, validators=[DataRequired()])
     payment_method = SelectField('Payment Method', choices=[('Cash', 'Cash'), ('Credit Card', 'Credit Card'), 
