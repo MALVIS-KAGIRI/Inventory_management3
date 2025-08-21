@@ -1,0 +1,1008 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Command Palette -->
+    <div class="command-palette" id="commandPalette">
+        <div class="command-search">
+            <i class="bi bi-search"></i>
+            <input type="text" placeholder="Search for anything..." id="commandInput">
+        </div>
+        <div class="command-results" id="commandResults">
+            <div class="command-section">
+                <div class="command-section-title">Quick Actions</div>
+                <div class="command-item" data-action="add-product">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Add Product</span>
+                </div>
+                <div class="command-item" data-action="create-project">
+                    <i class="bi bi-kanban"></i>
+                    <span>Create Project</span>
+                </div>
+                <div class="command-item" data-action="generate-report">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span>Generate Report</span>
+                </div>
+            </div>
+            <div class="command-section">
+                <div class="command-section-title">Navigation</div>
+                <div class="command-item" data-action="goto-inventory">
+                    <i class="bi bi-box-seam"></i>
+                    <span>Go to Inventory</span>
+                </div>
+                <div class="command-item" data-action="goto-projects">
+                    <i class="bi bi-kanban"></i>
+                    <span>Go to Projects</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="dashboard-title">
+            <h1>Dashboard</h1>
+            <p class="dashboard-subtitle">Welcome back, {{ current_user.username }}! Here's what's happening today.</p>
+        </div>
+        <div class="dashboard-actions">
+            <button class="btn btn-outline-primary" onclick="toggleTheme()">
+                <i class="bi bi-moon" id="themeIcon"></i>
+            </button>
+            <button class="btn btn-primary" onclick="openCommandPalette()">
+                <i class="bi bi-command"></i> Command
+            </button>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="metrics-grid">
+        <div class="metric-card" data-metric="inventory">
+            <div class="metric-icon inventory">
+                <i class="bi bi-box-seam"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value">{{ total_products }}</div>
+                <div class="metric-label">Total Products</div>
+                <div class="metric-change positive">
+                    <i class="bi bi-arrow-up"></i> 12% from last month
+                </div>
+            </div>
+        </div>
+
+        <div class="metric-card" data-metric="low-stock">
+            <div class="metric-icon warning">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value">{{ low_stock_count }}</div>
+                <div class="metric-label">Low Stock Items</div>
+                <div class="metric-change negative">
+                    <i class="bi bi-arrow-down"></i> 3 items need attention
+                </div>
+            </div>
+        </div>
+
+        <div class="metric-card" data-metric="projects">
+            <div class="metric-icon projects">
+                <i class="bi bi-kanban"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value">{{ active_projects }}</div>
+                <div class="metric-label">Active Projects</div>
+                <div class="metric-change positive">
+                    <i class="bi bi-arrow-up"></i> 2 new this week
+                </div>
+            </div>
+        </div>
+
+        <div class="metric-card" data-metric="revenue">
+            <div class="metric-icon revenue">
+                <i class="bi bi-graph-up"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value">${{ "%.0f"|format(monthly_revenue) }}</div>
+                <div class="metric-label">Monthly Revenue</div>
+                <div class="metric-change positive">
+                    <i class="bi bi-arrow-up"></i> 8% from last month
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Charts -->
+    <div class="charts-grid">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3>Inventory Forecast</h3>
+                <div class="chart-controls">
+                    <button class="btn btn-sm btn-outline-primary active" data-period="7d">7D</button>
+                    <button class="btn btn-sm btn-outline-primary" data-period="30d">30D</button>
+                    <button class="btn btn-sm btn-outline-primary" data-period="90d">90D</button>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="forecastChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3>Stock Movement</h3>
+                <div class="chart-legend">
+                    <span class="legend-item">
+                        <span class="legend-color" style="background: #10b981;"></span>
+                        Stock In
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-color" style="background: #ef4444;"></span>
+                        Stock Out
+                    </span>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="movementChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Smart Widgets -->
+    <div class="widgets-grid">
+        <!-- Recent Activity -->
+        <div class="widget-card">
+            <div class="widget-header">
+                <h3>Recent Activity</h3>
+                <button class="btn btn-sm btn-ghost">View All</button>
+            </div>
+            <div class="activity-list">
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        <i class="bi bi-plus-circle text-success"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">New product added</div>
+                        <div class="activity-subtitle">Industrial Switch - Model XYZ</div>
+                        <div class="activity-time">2 minutes ago</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        <i class="bi bi-arrow-right-circle text-primary"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">Parts assigned to project</div>
+                        <div class="activity-subtitle">Panel Assembly - Client ABC</div>
+                        <div class="activity-time">15 minutes ago</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        <i class="bi bi-exclamation-triangle text-warning"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">Low stock alert</div>
+                        <div class="activity-subtitle">Circuit Breakers - 20A</div>
+                        <div class="activity-time">1 hour ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="widget-card">
+            <div class="widget-header">
+                <h3>Quick Actions</h3>
+            </div>
+            <div class="quick-actions">
+                <a href="{{ url_for('add_product') }}" class="quick-action">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Add Product</span>
+                </a>
+                <a href="{{ url_for('create_project') }}" class="quick-action">
+                    <i class="bi bi-kanban"></i>
+                    <span>New Project</span>
+                </a>
+                <a href="{{ url_for('stock_adjustment') }}" class="quick-action">
+                    <i class="bi bi-arrow-left-right"></i>
+                    <span>Stock Adjustment</span>
+                </a>
+                <a href="{{ url_for('reports') }}" class="quick-action">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span>Generate Report</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Smart Shelves Status -->
+        <div class="widget-card">
+            <div class="widget-header">
+                <h3>Smart Shelves</h3>
+                <span class="status-indicator online">Online</span>
+            </div>
+            <div class="shelves-grid">
+                <div class="shelf-item">
+                    <div class="shelf-id">A1-01</div>
+                    <div class="shelf-status">
+                        <div class="shelf-capacity">
+                            <div class="capacity-bar">
+                                <div class="capacity-fill" style="width: 75%;"></div>
+                            </div>
+                            <span>75%</span>
+                        </div>
+                        <div class="shelf-temp">22°C</div>
+                    </div>
+                </div>
+                <div class="shelf-item">
+                    <div class="shelf-id">A1-02</div>
+                    <div class="shelf-status">
+                        <div class="shelf-capacity">
+                            <div class="capacity-bar">
+                                <div class="capacity-fill" style="width: 45%;"></div>
+                            </div>
+                            <span>45%</span>
+                        </div>
+                        <div class="shelf-temp">21°C</div>
+                    </div>
+                </div>
+                <div class="shelf-item">
+                    <div class="shelf-id">A1-03</div>
+                    <div class="shelf-status">
+                        <div class="shelf-capacity">
+                            <div class="capacity-bar">
+                                <div class="capacity-fill warning" style="width: 90%;"></div>
+                            </div>
+                            <span>90%</span>
+                        </div>
+                        <div class="shelf-temp">23°C</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guided Tour -->
+    <div class="tour-overlay" id="tourOverlay">
+        <div class="tour-popup" id="tourPopup">
+            <div class="tour-content">
+                <h4 id="tourTitle">Welcome to Your Dashboard!</h4>
+                <p id="tourDescription">This is your command center. Here you can monitor inventory, track projects, and get insights into your business.</p>
+            </div>
+            <div class="tour-actions">
+                <button class="btn btn-outline-secondary" onclick="skipTour()">Skip Tour</button>
+                <button class="btn btn-primary" onclick="nextTourStep()">Next</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.dashboard-container {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.dashboard-title h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.dashboard-subtitle {
+    color: #6b7280;
+    margin: 0.5rem 0 0 0;
+}
+
+.dashboard-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Command Palette */
+.command-palette {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 10vh;
+}
+
+.command-palette.active {
+    display: flex;
+}
+
+.command-search {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 600px;
+}
+
+.command-search input {
+    border: none;
+    outline: none;
+    flex: 1;
+    font-size: 1.1rem;
+}
+
+.command-results {
+    background: white;
+    border-radius: 12px;
+    margin-top: 0.5rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 600px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.command-section-title {
+    padding: 1rem 1rem 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.command-item {
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.command-item:hover {
+    background: #f3f4f6;
+}
+
+/* Metrics Grid */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.metric-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.metric-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.metric-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.metric-icon.inventory {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.metric-icon.warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.metric-icon.projects {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.metric-icon.revenue {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.metric-label {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+.metric-change {
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.metric-change.positive {
+    color: #10b981;
+}
+
+.metric-change.negative {
+    color: #ef4444;
+}
+
+/* Charts Grid */
+.charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.chart-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.chart-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.chart-controls .btn.active {
+    background: #4f46e5;
+    color: white;
+}
+
+.chart-container {
+    height: 300px;
+    position: relative;
+}
+
+.chart-legend {
+    display: flex;
+    gap: 1rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+/* Widgets Grid */
+.widgets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.widget-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.widget-header h3 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.status-indicator {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-indicator.online {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+/* Activity List */
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.activity-item {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.activity-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.activity-title {
+    font-weight: 500;
+    color: #111827;
+}
+
+.activity-subtitle {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.activity-time {
+    color: #9ca3af;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* Quick Actions */
+.quick-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.quick-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #6b7280;
+    transition: all 0.3s ease;
+}
+
+.quick-action:hover {
+    border-color: #4f46e5;
+    color: #4f46e5;
+    background: #f8fafc;
+}
+
+.quick-action i {
+    font-size: 1.5rem;
+}
+
+/* Smart Shelves */
+.shelves-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.shelf-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.shelf-id {
+    font-weight: 600;
+    color: #111827;
+}
+
+.shelf-status {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.shelf-capacity {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.capacity-bar {
+    width: 60px;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.capacity-fill {
+    height: 100%;
+    background: #10b981;
+    transition: width 0.3s ease;
+}
+
+.capacity-fill.warning {
+    background: #f59e0b;
+}
+
+.shelf-temp {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+/* Tour Overlay */
+.tour-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.tour-overlay.active {
+    display: flex;
+}
+
+.tour-popup {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 500px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.tour-content {
+    margin-bottom: 1.5rem;
+}
+
+.tour-content h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.tour-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+/* Dark Mode */
+body.dark-theme {
+    background: #111827;
+    color: #f9fafb;
+}
+
+body.dark-theme .metric-card,
+body.dark-theme .chart-card,
+body.dark-theme .widget-card {
+    background: #1f2937;
+    color: #f9fafb;
+}
+
+body.dark-theme .command-search,
+body.dark-theme .command-results {
+    background: #1f2937;
+    color: #f9fafb;
+}
+
+body.dark-theme .tour-popup {
+    background: #1f2937;
+    color: #f9fafb;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 1rem;
+    }
+    
+    .dashboard-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-actions {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+// Dashboard functionality
+document.addEventListener('DOMContentLoaded', function() {
+    initializeDashboard();
+    initializeCharts();
+    checkFirstVisit();
+});
+
+function initializeDashboard() {
+    // Apply saved theme
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-theme');
+        document.getElementById('themeIcon').className = 'bi bi-sun';
+    }
+    
+    // Add metric card click handlers
+    document.querySelectorAll('.metric-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const metric = this.dataset.metric;
+            navigateToMetric(metric);
+        });
+    });
+    
+    // Chart period controls
+    document.querySelectorAll('.chart-controls .btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.chart-controls .btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            updateChart(this.dataset.period);
+        });
+    });
+}
+
+function initializeCharts() {
+    // Initialize forecast chart
+    const forecastCtx = document.getElementById('forecastChart').getContext('2d');
+    new Chart(forecastCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Predicted Demand',
+                data: [65, 59, 80, 81, 56, 55],
+                borderColor: '#4f46e5',
+                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+    
+    // Initialize movement chart
+    const movementCtx = document.getElementById('movementChart').getContext('2d');
+    new Chart(movementCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Stock In',
+                data: [12, 19, 3, 5, 2, 3, 7],
+                backgroundColor: '#10b981'
+            }, {
+                label: 'Stock Out',
+                data: [8, 11, 13, 15, 12, 9, 10],
+                backgroundColor: '#ef4444'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+function openCommandPalette() {
+    document.getElementById('commandPalette').classList.add('active');
+    document.getElementById('commandInput').focus();
+}
+
+function closeCommandPalette() {
+    document.getElementById('commandPalette').classList.remove('active');
+}
+
+function toggleTheme() {
+    const body = document.body;
+    const themeIcon = document.getElementById('themeIcon');
+    
+    if (body.classList.contains('dark-theme')) {
+        body.classList.remove('dark-theme');
+        themeIcon.className = 'bi bi-moon';
+        localStorage.setItem('theme', 'light');
+    } else {
+        body.classList.add('dark-theme');
+        themeIcon.className = 'bi bi-sun';
+        localStorage.setItem('theme', 'dark');
+    }
+}
+
+function navigateToMetric(metric) {
+    const routes = {
+        'inventory': '{{ url_for("inventory") }}',
+        'low-stock': '{{ url_for("inventory") }}?filter=low-stock',
+        'projects': '{{ url_for("projects") }}',
+        'revenue': '{{ url_for("sales") }}'
+    };
+    
+    if (routes[metric]) {
+        window.location.href = routes[metric];
+    }
+}
+
+function updateChart(period) {
+    // Update chart data based on period
+    console.log('Updating chart for period:', period);
+}
+
+// Command palette functionality
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        openCommandPalette();
+    }
+    
+    if (e.key === 'Escape') {
+        closeCommandPalette();
+    }
+});
+
+document.getElementById('commandPalette').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeCommandPalette();
+    }
+});
+
+// Command actions
+document.querySelectorAll('.command-item').forEach(item => {
+    item.addEventListener('click', function() {
+        const action = this.dataset.action;
+        executeCommand(action);
+        closeCommandPalette();
+    });
+});
+
+function executeCommand(action) {
+    const commands = {
+        'add-product': () => window.location.href = '{{ url_for("add_product") }}',
+        'create-project': () => window.location.href = '{{ url_for("create_project") }}',
+        'generate-report': () => window.location.href = '{{ url_for("reports") }}',
+        'goto-inventory': () => window.location.href = '{{ url_for("inventory") }}',
+        'goto-projects': () => window.location.href = '{{ url_for("projects") }}'
+    };
+    
+    if (commands[action]) {
+        commands[action]();
+    }
+}
+
+// Guided tour
+let tourStep = 0;
+const tourSteps = [
+    {
+        title: "Welcome to Your Dashboard!",
+        description: "This is your command center. Here you can monitor inventory, track projects, and get insights into your business."
+    },
+    {
+        title: "Key Metrics",
+        description: "These cards show your most important business metrics. Click on any card to dive deeper into the data."
+    },
+    {
+        title: "Command Palette",
+        description: "Press Ctrl+K to open the command palette for quick navigation and actions."
+    },
+    {
+        title: "Smart Features",
+        description: "Your dashboard includes forecasting, real-time updates, and smart notifications to keep you informed."
+    }
+];
+
+function checkFirstVisit() {
+    if (!localStorage.getItem('dashboard-tour-completed')) {
+        setTimeout(() => {
+            startTour();
+        }, 1000);
+    }
+}
+
+function startTour() {
+    document.getElementById('tourOverlay').classList.add('active');
+    showTourStep(0);
+}
+
+function showTourStep(step) {
+    const tourData = tourSteps[step];
+    document.getElementById('tourTitle').textContent = tourData.title;
+    document.getElementById('tourDescription').textContent = tourData.description;
+    tourStep = step;
+}
+
+function nextTourStep() {
+    if (tourStep < tourSteps.length - 1) {
+        showTourStep(tourStep + 1);
+    } else {
+        completeTour();
+    }
+}
+
+function skipTour() {
+    completeTour();
+}
+
+function completeTour() {
+    document.getElementById('tourOverlay').classList.remove('active');
+    localStorage.setItem('dashboard-tour-completed', 'true');
+}
+</script>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}

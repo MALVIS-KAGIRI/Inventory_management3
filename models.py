@@ -30,6 +30,13 @@ class User(db.Model, UserMixin):
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     last_login = db.Column(db.DateTime)
+    preferences = db.Column(db.JSON, default=lambda: {
+        'theme': 'light',
+        'dashboard_layout': 'default',
+        'notifications': True,
+        'language': 'en',
+        'timezone': 'UTC'
+    })
 
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -52,6 +59,130 @@ class Product(db.Model):
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # Industrial Features
+    serial_number = db.Column(db.String(100))
+    batch_number = db.Column(db.String(100))
+    barcode = db.Column(db.String(100))
+    rfid_tag = db.Column(db.String(100))
+    location = db.Column(db.String(100))
+    shelf_position = db.Column(db.String(50))
+    weight = db.Column(db.Numeric(10, 3))
+    dimensions = db.Column(db.String(100))
+    safety_stock = db.Column(db.Integer, default=0)
+    lead_time_days = db.Column(db.Integer, default=7)
+    expiry_date = db.Column(db.Date)
+    compliance_tags = db.Column(db.JSON)
+    safety_labels = db.Column(db.JSON)
+    tech_specs = db.relationship('TechnicalSpecification', backref='product', lazy=True)
+    manuals = db.relationship('ProductManual', backref='product', lazy=True)
+    maintenance_logs = db.relationship('MaintenanceLog', backref='product', lazy=True)
+    usage_history = db.relationship('UsageHistory', backref='product', lazy=True)
+
+class TechnicalSpecification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    spec_name = db.Column(db.String(100), nullable=False)
+    spec_value = db.Column(db.String(200), nullable=False)
+    unit = db.Column(db.String(20))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class ProductManual(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    file_path = db.Column(db.String(500))
+    file_url = db.Column(db.String(500))
+    manual_type = db.Column(db.String(50))  # Installation, Operation, Maintenance
+    version = db.Column(db.String(20))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class MaintenanceLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    equipment_id = db.Column(db.String(100))
+    maintenance_type = db.Column(db.String(50))  # Preventive, Corrective, Emergency
+    description = db.Column(db.Text)
+    performed_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    scheduled_date = db.Column(db.DateTime)
+    completed_date = db.Column(db.DateTime)
+    status = db.Column(db.String(20), default='Scheduled')
+    cost = db.Column(db.Numeric(10, 2))
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class UsageHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    equipment_id = db.Column(db.String(100))
+    usage_date = db.Column(db.DateTime, default=datetime.utcnow)
+    hours_used = db.Column(db.Numeric(8, 2))
+    cycles_completed = db.Column(db.Integer)
+    efficiency_rating = db.Column(db.Numeric(5, 2))
+    operator_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    notes = db.Column(db.Text)
+
+class EquipmentMapping(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    equipment_id = db.Column(db.String(100), unique=True, nullable=False)
+    equipment_name = db.Column(db.String(200), nullable=False)
+    location = db.Column(db.String(100))
+    department = db.Column(db.String(100))
+    manufacturer = db.Column(db.String(100))
+    model = db.Column(db.String(100))
+    serial_number = db.Column(db.String(100))
+    installation_date = db.Column(db.Date)
+    warranty_expiry = db.Column(db.Date)
+    status = db.Column(db.String(20), default='Active')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class ForecastData(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    forecast_date = db.Column(db.Date, nullable=False)
+    predicted_demand = db.Column(db.Integer, nullable=False)
+    confidence_level = db.Column(db.Numeric(5, 2))
+    algorithm_used = db.Column(db.String(50))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    product = db.relationship('Product', backref='forecasts')
+
+class SmartShelf(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    shelf_id = db.Column(db.String(50), unique=True, nullable=False)
+    location = db.Column(db.String(100), nullable=False)
+    capacity = db.Column(db.Integer, nullable=False)
+    current_weight = db.Column(db.Numeric(10, 3))
+    temperature = db.Column(db.Numeric(5, 2))
+    humidity = db.Column(db.Numeric(5, 2))
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default='Active')
+    products = db.relationship('Product', secondary='shelf_products', backref='shelves')
+
+shelf_products = db.Table('shelf_products',
+    db.Column('shelf_id', db.Integer, db.ForeignKey('smart_shelf.id'), primary_key=True),
+    db.Column('product_id', db.Integer, db.ForeignKey('product.id'), primary_key=True),
+    db.Column('quantity', db.Integer, default=0)
+)
+
+class APIKey(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    key_name = db.Column(db.String(100), nullable=False)
+    api_key = db.Column(db.String(255), unique=True, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    permissions = db.Column(db.JSON)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_used = db.Column(db.DateTime)
+    expires_at = db.Column(db.DateTime)
+
+class Webhook(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    url = db.Column(db.String(500), nullable=False)
+    events = db.Column(db.JSON)  # List of events to trigger on
+    is_active = db.Column(db.Boolean, default=True)
+    secret_key = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_triggered = db.Column(db.DateTime)
 
 class Supplier(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -216,6 +347,7 @@ class WorkOrderItem(db.Model):
     unit_cost = db.Column(db.Numeric(10, 2))
     total_cost = db.Column(db.Numeric(10, 2))
     product = db.relationship('Product', backref='work_order_items')
+
 class Sale(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sale_number = db.Column(db.String(20), unique=True, nullable=False)

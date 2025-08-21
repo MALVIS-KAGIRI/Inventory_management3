@@ -1,0 +1,650 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">Spare Parts Catalog</h2>
+                    <p class="text-muted">Comprehensive catalog of spare parts with technical specifications and documentation</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" onclick="importSpares()">
+                        <i class="bi bi-upload"></i> Import CSV
+                    </button>
+                    <button class="btn btn-outline-success" onclick="exportCatalog()">
+                        <i class="bi bi-download"></i> Export
+                    </button>
+                    <a href="{{ url_for('add_spare_part') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add Spare Part
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Search -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="search-box">
+                                <i class="bi bi-search"></i>
+                                <input type="text" class="form-control" placeholder="Search parts..." id="smartSearch">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="categoryFilter">
+                                <option value="">All Categories</option>
+                                <option value="electrical">Electrical</option>
+                                <option value="mechanical">Mechanical</option>
+                                <option value="hydraulic">Hydraulic</option>
+                                <option value="pneumatic">Pneumatic</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="equipmentFilter">
+                                <option value="">All Equipment</option>
+                                <option value="motor">Motors</option>
+                                <option value="pump">Pumps</option>
+                                <option value="valve">Valves</option>
+                                <option value="sensor">Sensors</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="availabilityFilter">
+                                <option value="">All Stock</option>
+                                <option value="in-stock">In Stock</option>
+                                <option value="low-stock">Low Stock</option>
+                                <option value="out-of-stock">Out of Stock</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="btn-group w-100" role="group">
+                                <button class="btn btn-outline-primary active" data-view="grid">
+                                    <i class="bi bi-grid-3x3-gap"></i>
+                                </button>
+                                <button class="btn btn-outline-primary" data-view="list">
+                                    <i class="bi bi-list"></i>
+                                </button>
+                                <button class="btn btn-outline-primary" data-view="table">
+                                    <i class="bi bi-table"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spare Parts Grid -->
+    <div class="spare-parts-container" id="spareParts">
+        <div class="row g-4" id="gridView">
+            <!-- Sample Spare Parts -->
+            <div class="col-lg-4 col-md-6">
+                <div class="spare-card">
+                    <div class="spare-image">
+                        <img src="https://images.pexels.com/photos/257736/pexels-photo-257736.jpeg?auto=compress&cs=tinysrgb&w=300" alt="Motor Bearing">
+                        <div class="spare-badges">
+                            <span class="badge bg-success">In Stock</span>
+                            <span class="badge bg-info">Critical</span>
+                        </div>
+                    </div>
+                    <div class="spare-content">
+                        <div class="spare-header">
+                            <h5>Motor Bearing - SKF 6205</h5>
+                            <div class="spare-actions">
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#techSpecsModal">
+                                    <i class="bi bi-gear"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#manualsModal">
+                                    <i class="bi bi-file-text"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="spare-details">
+                            <div class="detail-row">
+                                <span class="label">Part Number:</span>
+                                <span class="value">SKF-6205-2RS</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">Equipment:</span>
+                                <span class="value">Conveyor Motor</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">Stock:</span>
+                                <span class="value stock-level">25 units</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">Location:</span>
+                                <span class="value">A1-B3-15</span>
+                            </div>
+                        </div>
+                        <div class="spare-footer">
+                            <div class="spare-price">$45.99</div>
+                            <div class="spare-buttons">
+                                <button class="btn btn-sm btn-success">
+                                    <i class="bi bi-cart-plus"></i> Add to Order
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6">
+                <div class="spare-card">
+                    <div class="spare-image">
+                        <img src="https://images.pexels.com/photos/162553/keys-workshop-mechanic-tools-162553.jpeg?auto=compress&cs=tinysrgb&w=300" alt="Hydraulic Seal">
+                        <div class="spare-badges">
+                            <span class="badge bg-warning">Low Stock</span>
+                            <span class="badge bg-secondary">Standard</span>
+                        </div>
+                    </div>
+                    <div class="spare-content">
+                        <div class="spare-header">
+                            <h5>Hydraulic Seal Kit</h5>
+                            <div class="spare-actions">
+                                <button class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-gear"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info">
+                                    <i class="bi bi-file-text"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="spare-details">
+                            <div class="detail-row">
+                                <span class="label">Part Number:</span>
+                                <span class="value">HSK-2540-NBR</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">Equipment:</span>
+                                <span class="value">Hydraulic Cylinder</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">Stock:</span>
+                                <span class="value stock-level warning">3 units</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">Location:</span>
+                                <span class="value">B2-A1-08</span>
+                            </div>
+                        </div>
+                        <div class="spare-footer">
+                            <div class="spare-price">$89.50</div>
+                            <div class="spare-buttons">
+                                <button class="btn btn-sm btn-success">
+                                    <i class="bi bi-cart-plus"></i> Add to Order
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6">
+                <div class="spare-card">
+                    <div class="spare-image">
+                        <img src="https://images.pexels.com/photos/1108101/pexels-photo-1108101.jpeg?auto=compress&cs=tinysrgb&w=300" alt="Control Valve">
+                        <div class="spare-badges">
+                            <span class="badge bg-danger">Out of Stock</span>
+                            <span class="badge bg-warning">Critical</span>
+                        </div>
+                    </div>
+                    <div class="spare-content">
+                        <div class="spare-header">
+                            <h5>Pneumatic Control Valve</h5>
+                            <div class="spare-actions">
+                                <button class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-gear"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info">
+                                    <i class="bi bi-file-text"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="spare-details">
+                            <div class="detail-row">
+                                <span class="label">Part Number:</span>
+                                <span class="value">PCV-3/8-24VDC</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">Equipment:</span>
+                                <span class="value">Air Compressor</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">Stock:</span>
+                                <span class="value stock-level danger">0 units</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">Location:</span>
+                                <span class="value">C1-D2-22</span>
+                            </div>
+                        </div>
+                        <div class="spare-footer">
+                            <div class="spare-price">$156.75</div>
+                            <div class="spare-buttons">
+                                <button class="btn btn-sm btn-warning">
+                                    <i class="bi bi-clock"></i> Reorder
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Technical Specifications Modal -->
+<div class="modal fade" id="techSpecsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Technical Specifications - Motor Bearing SKF 6205</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Physical Specifications</h6>
+                        <table class="table table-sm">
+                            <tr><td>Inner Diameter</td><td>25 mm</td></tr>
+                            <tr><td>Outer Diameter</td><td>52 mm</td></tr>
+                            <tr><td>Width</td><td>15 mm</td></tr>
+                            <tr><td>Weight</td><td>0.128 kg</td></tr>
+                            <tr><td>Material</td><td>Chrome Steel</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Performance Specifications</h6>
+                        <table class="table table-sm">
+                            <tr><td>Max Speed</td><td>15,000 RPM</td></tr>
+                            <tr><td>Load Rating</td><td>14.0 kN</td></tr>
+                            <tr><td>Temperature Range</td><td>-40°C to +120°C</td></tr>
+                            <tr><td>Seal Type</td><td>2RS (Rubber Sealed)</td></tr>
+                            <tr><td>Lubrication</td><td>Grease</td></tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Compatibility</h6>
+                        <div class="compatibility-tags">
+                            <span class="badge bg-primary">Conveyor Motor CM-2500</span>
+                            <span class="badge bg-primary">Pump Motor PM-1800</span>
+                            <span class="badge bg-primary">Fan Motor FM-3000</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-primary">
+                    <i class="bi bi-download"></i> Download Specs
+                </button>
+                <button type="button" class="btn btn-primary">
+                    <i class="bi bi-cart-plus"></i> Add to Order
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Manuals Modal -->
+<div class="modal fade" id="manualsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Documentation - Motor Bearing SKF 6205</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="documents-list">
+                    <div class="document-item">
+                        <div class="document-icon">
+                            <i class="bi bi-file-earmark-pdf text-danger"></i>
+                        </div>
+                        <div class="document-info">
+                            <h6>Installation Manual</h6>
+                            <p class="text-muted">Complete installation guide with torque specifications</p>
+                            <small>Version 2.1 • Updated: March 2024</small>
+                        </div>
+                        <div class="document-actions">
+                            <button class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-download"></i> Download
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="document-item">
+                        <div class="document-icon">
+                            <i class="bi bi-file-earmark-pdf text-danger"></i>
+                        </div>
+                        <div class="document-info">
+                            <h6>Maintenance Guide</h6>
+                            <p class="text-muted">Preventive maintenance schedule and procedures</p>
+                            <small>Version 1.3 • Updated: January 2024</small>
+                        </div>
+                        <div class="document-actions">
+                            <button class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-download"></i> Download
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="document-item">
+                        <div class="document-icon">
+                            <i class="bi bi-file-earmark-text text-primary"></i>
+                        </div>
+                        <div class="document-info">
+                            <h6>Safety Data Sheet</h6>
+                            <p class="text-muted">Material safety information and handling procedures</p>
+                            <small>Version 4.0 • Updated: February 2024</small>
+                        </div>
+                        <div class="document-actions">
+                            <button class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-download"></i> Download
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.search-box {
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+}
+
+.search-box input {
+    padding-left: 40px;
+}
+
+.spare-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.spare-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.spare-image {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+}
+
+.spare-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.spare-badges {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.spare-content {
+    padding: 1.5rem;
+}
+
+.spare-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.spare-header h5 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    flex: 1;
+}
+
+.spare-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.spare-details {
+    margin-bottom: 1rem;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.detail-row .label {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.detail-row .value {
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.stock-level.warning {
+    color: #f59e0b;
+}
+
+.stock-level.danger {
+    color: #ef4444;
+}
+
+.spare-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.spare-price {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #059669;
+}
+
+.spare-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.documents-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.document-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+.document-icon {
+    font-size: 2rem;
+}
+
+.document-info {
+    flex: 1;
+}
+
+.document-info h6 {
+    margin: 0 0 0.25rem 0;
+    font-weight: 600;
+}
+
+.document-info p {
+    margin: 0 0 0.25rem 0;
+    font-size: 0.875rem;
+}
+
+.document-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.compatibility-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* Dark Mode */
+body.dark-theme .spare-card {
+    background: #1f2937;
+    color: #f9fafb;
+}
+
+body.dark-theme .document-item {
+    border-color: #374151;
+    background: #1f2937;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initializeSparesCatalog();
+});
+
+function initializeSparesCatalog() {
+    // Smart search functionality
+    const searchInput = document.getElementById('smartSearch');
+    searchInput.addEventListener('input', debounce(performSmartSearch, 300));
+    
+    // Filter functionality
+    document.querySelectorAll('select[id$="Filter"]').forEach(filter => {
+        filter.addEventListener('change', applyFilters);
+    });
+    
+    // View toggle
+    document.querySelectorAll('[data-view]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            switchView(this.dataset.view);
+        });
+    });
+}
+
+function performSmartSearch(query) {
+    // Implement smart search with fuzzy matching
+    const cards = document.querySelectorAll('.spare-card');
+    
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        const matches = text.includes(query.toLowerCase());
+        card.closest('.col-lg-4').style.display = matches || !query ? 'block' : 'none';
+    });
+}
+
+function applyFilters() {
+    const category = document.getElementById('categoryFilter').value;
+    const equipment = document.getElementById('equipmentFilter').value;
+    const availability = document.getElementById('availabilityFilter').value;
+    
+    // Apply combined filters
+    console.log('Applying filters:', { category, equipment, availability });
+}
+
+function switchView(view) {
+    const container = document.getElementById('spareParts');
+    
+    switch(view) {
+        case 'grid':
+            container.className = 'spare-parts-container';
+            break;
+        case 'list':
+            container.className = 'spare-parts-container list-view';
+            break;
+        case 'table':
+            container.className = 'spare-parts-container table-view';
+            break;
+    }
+}
+
+function importSpares() {
+    // Create file input for CSV import
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Process CSV file
+            console.log('Importing spare parts from:', file.name);
+        }
+    };
+    input.click();
+}
+
+function exportCatalog() {
+    // Export current catalog view
+    console.log('Exporting spare parts catalog');
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+</script>
+{% endblock %}
