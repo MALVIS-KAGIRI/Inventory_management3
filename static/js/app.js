@@ -35,6 +35,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Initialize modern features
+    initializeOfflineMode();
+    initializeKeyboardShortcuts();
+    initializeDragDrop();
+    initializeTooltips();
+    initializeAccessibility();
+    initializeSmartSearch();
+    
     // Auto-hide flash messages
     const alerts = document.querySelectorAll('.alert');
     alerts.forEach(alert => {
@@ -213,31 +221,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Keyboard shortcuts
-    document.addEventListener('keydown', function(e) {
-        // Ctrl/Cmd + K for search
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-            e.preventDefault();
-            const searchInput = document.querySelector('input[type="search"], .search-input');
-            if (searchInput) {
-                searchInput.focus();
-            }
-        }
-        
-        // Escape to close modals/dropdowns
-        if (e.key === 'Escape') {
-            const openDropdowns = document.querySelectorAll('.dropdown-menu.show');
-            openDropdowns.forEach(dropdown => {
-                dropdown.classList.remove('show');
-            });
-            
-            const openModals = document.querySelectorAll('.modal.show');
-            openModals.forEach(modal => {
-                const modalInstance = bootstrap.Modal.getInstance(modal);
-                if (modalInstance) modalInstance.hide();
-            });
-        }
-    });
     
     // Lazy loading for images
     const images = document.querySelectorAll('img[data-src]');
@@ -356,6 +339,321 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Modern Features Implementation
+
+// Offline Mode Detection
+function initializeOfflineMode() {
+    const offlineIndicator = document.createElement('div');
+    offlineIndicator.className = 'offline-indicator';
+    offlineIndicator.innerHTML = '<i class="bi bi-wifi-off"></i> You are offline';
+    document.body.appendChild(offlineIndicator);
+    
+    function updateOnlineStatus() {
+        if (navigator.onLine) {
+            offlineIndicator.classList.remove('show');
+        } else {
+            offlineIndicator.classList.add('show');
+        }
+    }
+    
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus();
+}
+
+// Enhanced Keyboard Shortcuts
+function initializeKeyboardShortcuts() {
+    const shortcuts = {
+        'ctrl+k': () => openCommandPalette(),
+        'ctrl+/': () => showShortcutsHelp(),
+        'ctrl+shift+d': () => toggleDarkMode(),
+        'ctrl+shift+n': () => showNotifications(),
+        'escape': () => closeModalsAndDropdowns(),
+        'ctrl+s': (e) => {
+            e.preventDefault();
+            saveCurrentForm();
+        }
+    };
+    
+    document.addEventListener('keydown', function(e) {
+        const key = [];
+        if (e.ctrlKey || e.metaKey) key.push('ctrl');
+        if (e.shiftKey) key.push('shift');
+        if (e.altKey) key.push('alt');
+        key.push(e.key.toLowerCase());
+        
+        const shortcut = key.join('+');
+        if (shortcuts[shortcut]) {
+            shortcuts[shortcut](e);
+        }
+    });
+}
+
+// Drag and Drop Functionality
+function initializeDragDrop() {
+    const dropZones = document.querySelectorAll('.drag-drop-zone');
+    
+    dropZones.forEach(zone => {
+        zone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('drag-over');
+        });
+        
+        zone.addEventListener('dragleave', function() {
+            this.classList.remove('drag-over');
+        });
+        
+        zone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            
+            const files = Array.from(e.dataTransfer.files);
+            handleFileUpload(files, this);
+        });
+        
+        zone.addEventListener('click', function() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.multiple = true;
+            input.onchange = (e) => handleFileUpload(Array.from(e.target.files), this);
+            input.click();
+        });
+    });
+}
+
+// Smart Search with Fuzzy Matching
+function initializeSmartSearch() {
+    const searchInputs = document.querySelectorAll('.smart-search');
+    
+    searchInputs.forEach(input => {
+        input.addEventListener('input', debounce(function() {
+            const query = this.value.toLowerCase();
+            const results = performFuzzySearch(query);
+            displaySearchResults(results, this);
+        }, 300));
+    });
+}
+
+function performFuzzySearch(query) {
+    // Implement fuzzy search algorithm
+    const searchableItems = document.querySelectorAll('[data-searchable]');
+    const results = [];
+    
+    searchableItems.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        const score = calculateFuzzyScore(query, text);
+        if (score > 0.3) {
+            results.push({ element: item, score });
+        }
+    });
+    
+    return results.sort((a, b) => b.score - a.score);
+}
+
+function calculateFuzzyScore(query, text) {
+    if (!query) return 1;
+    if (text.includes(query)) return 1;
+    
+    // Simple fuzzy matching algorithm
+    let score = 0;
+    let queryIndex = 0;
+    
+    for (let i = 0; i < text.length && queryIndex < query.length; i++) {
+        if (text[i] === query[queryIndex]) {
+            score++;
+            queryIndex++;
+        }
+    }
+    
+    return score / query.length;
+}
+
+// Enhanced Tooltips and Help System
+function initializeTooltips() {
+    // Create dynamic tooltips for complex UI elements
+    const complexElements = document.querySelectorAll('[data-help]');
+    
+    complexElements.forEach(element => {
+        element.addEventListener('mouseenter', function() {
+            showContextualHelp(this);
+        });
+        
+        element.addEventListener('mouseleave', function() {
+            hideContextualHelp();
+        });
+    });
+}
+
+// Accessibility Enhancements
+function initializeAccessibility() {
+    // Add ARIA labels dynamically
+    const buttons = document.querySelectorAll('button:not([aria-label])');
+    buttons.forEach(button => {
+        if (!button.textContent.trim()) {
+            const icon = button.querySelector('i');
+            if (icon) {
+                const iconClass = icon.className;
+                button.setAttribute('aria-label', getAriaLabelFromIcon(iconClass));
+            }
+        }
+    });
+    
+    // Enhance focus management
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab') {
+            document.body.classList.add('keyboard-navigation');
+        }
+    });
+    
+    document.addEventListener('mousedown', function() {
+        document.body.classList.remove('keyboard-navigation');
+    });
+}
+
+function getAriaLabelFromIcon(iconClass) {
+    const iconMap = {
+        'bi-plus': 'Add',
+        'bi-pencil': 'Edit',
+        'bi-trash': 'Delete',
+        'bi-eye': 'View',
+        'bi-download': 'Download',
+        'bi-upload': 'Upload',
+        'bi-search': 'Search',
+        'bi-filter': 'Filter',
+        'bi-gear': 'Settings'
+    };
+    
+    for (const [icon, label] of Object.entries(iconMap)) {
+        if (iconClass.includes(icon)) {
+            return label;
+        }
+    }
+    
+    return 'Button';
+}
+
+// Command Palette
+function openCommandPalette() {
+    let palette = document.getElementById('commandPalette');
+    if (!palette) {
+        palette = createCommandPalette();
+        document.body.appendChild(palette);
+    }
+    palette.classList.add('active');
+    palette.querySelector('input').focus();
+}
+
+function createCommandPalette() {
+    const palette = document.createElement('div');
+    palette.id = 'commandPalette';
+    palette.className = 'command-palette';
+    palette.innerHTML = `
+        <div class="command-search">
+            <i class="bi bi-search"></i>
+            <input type="text" placeholder="Type a command or search...">
+        </div>
+        <div class="command-results">
+            <div class="command-section">
+                <div class="command-section-title">Quick Actions</div>
+                <div class="command-item" data-action="add-product">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Add Product</span>
+                </div>
+                <div class="command-item" data-action="create-project">
+                    <i class="bi bi-kanban"></i>
+                    <span>Create Project</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    palette.addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.remove('active');
+        }
+    });
+    
+    return palette;
+}
+
+// Utility Functions
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-theme');
+    localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+}
+
+function showNotifications() {
+    // Open notifications panel
+    const notificationBtn = document.querySelector('[data-bs-toggle="dropdown"]');
+    if (notificationBtn) {
+        notificationBtn.click();
+    }
+}
+
+function closeModalsAndDropdowns() {
+    // Close all open modals and dropdowns
+    const openDropdowns = document.querySelectorAll('.dropdown-menu.show');
+    openDropdowns.forEach(dropdown => {
+        dropdown.classList.remove('show');
+    });
+    
+    const openModals = document.querySelectorAll('.modal.show');
+    openModals.forEach(modal => {
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) modalInstance.hide();
+    });
+    
+    const commandPalette = document.getElementById('commandPalette');
+    if (commandPalette) {
+        commandPalette.classList.remove('active');
+    }
+}
+
+function saveCurrentForm() {
+    const activeForm = document.querySelector('form:focus-within');
+    if (activeForm) {
+        const submitBtn = activeForm.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.click();
+        }
+    }
+}
+
+function handleFileUpload(files, dropZone) {
+    files.forEach(file => {
+        console.log('Uploading file:', file.name);
+        // Implement file upload logic
+    });
+}
+
+function showContextualHelp(element) {
+    const helpText = element.dataset.help;
+    if (helpText) {
+        // Show contextual help tooltip
+        console.log('Showing help:', helpText);
+    }
+}
+
+function hideContextualHelp() {
+    // Hide contextual help
+}
+
+function showShortcutsHelp() {
+    // Show keyboard shortcuts modal
+    console.log('Showing shortcuts help');
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
 // Global utility functions
 window.IMS = {
     showNotification: function(message, type = 'info', duration = 5000) {
